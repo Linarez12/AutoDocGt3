@@ -29,22 +29,6 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             AutoDocGtTheme {
-                var hasCameraPermission by remember {
-                    mutableStateOf(
-                        ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-                    )
-                }
-
-                val permissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission(),
-                    onResult = { isGranted ->
-                        hasCameraPermission = isGranted
-                    }
-                )
-
                 var currentScreen by remember { mutableStateOf(startScreen) }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -68,7 +52,11 @@ class MainActivity : ComponentActivity() {
                         "home" -> {
                             HomeScreen(
                                 modifier = modifierWithPadding,
-                                onNavigateToSettings = { currentScreen = "settings" }
+                                onNavigateToSettings = { currentScreen = "settings" },
+                                onNavigateToMaintenance = { currentScreen = "maintenance" },
+                                onNavigateToDocuments = { currentScreen = "documents" },
+                                onNavigateToReminders = { currentScreen = "reminders" },
+                                onNavigateToExpenses = { currentScreen = "expenses" }
                             )
                         }
                         "settings" -> {
@@ -78,14 +66,56 @@ class MainActivity : ComponentActivity() {
                                 onLogout = { currentScreen = "login" }
                             )
                         }
+                        "maintenance" -> {
+                            MaintenanceScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "home" },
+                                onHomeClick = { currentScreen = "home" },
+                                onDocumentsClick = { currentScreen = "documents" },
+                                onRemindersClick = { currentScreen = "reminders" },
+                                onExpensesClick = { currentScreen = "expenses" }
+                            )
+                        }
+                        "reminders" -> {
+                            RemindersScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "home" },
+                                onHomeClick = { currentScreen = "home" },
+                                onMaintenanceClick = { currentScreen = "maintenance" },
+                                onDocumentsClick = { currentScreen = "documents" },
+                                onExpensesClick = { currentScreen = "expenses" }
+                            )
+                        }
+                        "documents" -> {
+                            DocumentsScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "home" },
+                                onHomeClick = { currentScreen = "home" },
+                                onMaintenanceClick = { currentScreen = "maintenance" },
+                                onRemindersClick = { currentScreen = "reminders" },
+                                onExpensesClick = { currentScreen = "expenses" },
+                                onNavigateToAddDocument = { currentScreen = "add_document" }
+                            )
+                        }
+                        "expenses" -> {
+                            ExpensesScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "home" },
+                                onHomeClick = { currentScreen = "home" },
+                                onMaintenanceClick = { currentScreen = "maintenance" },
+                                onDocumentsClick = { currentScreen = "documents" },
+                                onRemindersClick = { currentScreen = "reminders" }
+                            )
+                        }
+                        "add_document" -> {
+                            AddDocumentScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "documents" }
+                            )
+                        }
                     }
                 }
 
-                LaunchedEffect(Unit) {
-                    if (!hasCameraPermission) {
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                }
             }
         }
     }

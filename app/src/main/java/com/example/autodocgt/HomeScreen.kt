@@ -1,5 +1,11 @@
 package com.example.autodocgt
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,16 +27,32 @@ import com.google.firebase.ktx.Firebase
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToMaintenance: () -> Unit = {},
+    onNavigateToDocuments: () -> Unit = {},
+    onNavigateToReminders: () -> Unit = {},
+    onNavigateToExpenses: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
+    val context = LocalContext.current
     
     var userName by remember { mutableStateOf("Usuario") }
     val auth = Firebase.auth
     val db = Firebase.firestore
 
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            // Resultado de la cámara
+        }
+    )
+
     LaunchedEffect(Unit) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+        
         val currentUser = auth.currentUser
         if (currentUser != null) {
             db.collection("usuarios").document(currentUser.uid).get()
@@ -49,7 +71,15 @@ fun HomeScreen(
             HomeTopBar(primaryDarkBlue, onNavigateToSettings)
         },
         bottomBar = {
-            HomeBottomNavigationBar(primaryDarkBlue)
+            HomeBottomNavigationBar(
+                backgroundColor = primaryDarkBlue,
+                currentRoute = "home",
+                onHomeClick = {},
+                onMaintenanceClick = onNavigateToMaintenance,
+                onDocumentsClick = onNavigateToDocuments,
+                onRemindersClick = onNavigateToReminders,
+                onExpensesClick = onNavigateToExpenses
+            )
         }
     ) { innerPadding ->
         Column(
@@ -120,7 +150,15 @@ fun HomeTopBar(backgroundColor: Color, onSettingsClick: () -> Unit) {
 }
 
 @Composable
-fun HomeBottomNavigationBar(backgroundColor: Color) {
+fun HomeBottomNavigationBar(
+    backgroundColor: Color,
+    currentRoute: String = "home",
+    onHomeClick: () -> Unit = {},
+    onMaintenanceClick: () -> Unit = {},
+    onDocumentsClick: () -> Unit = {},
+    onRemindersClick: () -> Unit = {},
+    onExpensesClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -129,32 +167,34 @@ fun HomeBottomNavigationBar(backgroundColor: Color) {
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomNavItem(iconRes = R.drawable.img_home_inicio, label = "Inicio")
-        BottomNavItem(iconRes = R.drawable.img_carro_documentos, label = "Mantenimiento")
-        BottomNavItem(iconRes = R.drawable.img_file_plus_inicio, label = "Documentos")
-        BottomNavItem(iconRes = R.drawable.img_calendar_inicio, label = "Recordatorios")
-        BottomNavItem(iconRes = R.drawable.img_billetera_inicio, label = "Gastos")
+        BottomNavItem(iconRes = R.drawable.img_home_inicio, label = "Inicio", isSelected = currentRoute == "home", onClick = onHomeClick)
+        BottomNavItem(iconRes = R.drawable.img_carro_documentos, label = "Mantenimiento", isSelected = currentRoute == "maintenance", onClick = onMaintenanceClick)
+        BottomNavItem(iconRes = R.drawable.img_file_plus_inicio, label = "Documentos", isSelected = currentRoute == "documents", onClick = onDocumentsClick)
+        BottomNavItem(iconRes = R.drawable.img_calendar_inicio, label = "Recordatorios", isSelected = currentRoute == "reminders", onClick = onRemindersClick)
+        BottomNavItem(iconRes = R.drawable.img_billetera_inicio, label = "Gastos", isSelected = currentRoute == "expenses", onClick = onExpensesClick)
     }
 }
 
 @Composable
-fun BottomNavItem(iconRes: Int, label: String) {
+fun BottomNavItem(iconRes: Int, label: String, isSelected: Boolean = false, onClick: () -> Unit = {}) {
+    val alpha = if (isSelected) 1f else 0.5f
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.clickable { /* TODO */ }.padding(4.dp)
+        modifier = Modifier.clickable { onClick() }.padding(4.dp)
     ) {
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = label,
-            tint = Color.White,
+            tint = Color.White.copy(alpha = alpha),
             modifier = Modifier.size(28.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
-            color = Color.White,
-            fontSize = 10.sp
+            color = Color.White.copy(alpha = alpha),
+            fontSize = 10.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }

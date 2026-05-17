@@ -163,7 +163,9 @@ fun RegisterScreen(
                         focusedContainerColor = textFieldBackground,
                         unfocusedContainerColor = textFieldBackground,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
                     ),
                     singleLine = true
                 )
@@ -187,7 +189,9 @@ fun RegisterScreen(
                         focusedContainerColor = textFieldBackground,
                         unfocusedContainerColor = textFieldBackground,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
                     ),
                     singleLine = true
                 )
@@ -212,7 +216,9 @@ fun RegisterScreen(
                         focusedContainerColor = textFieldBackground,
                         unfocusedContainerColor = textFieldBackground,
                         focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
                     ),
                     singleLine = true
                 )

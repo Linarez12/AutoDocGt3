@@ -29,7 +29,8 @@ fun MaintenanceScreen(
     onHomeClick: () -> Unit = {},
     onDocumentsClick: () -> Unit = {},
     onRemindersClick: () -> Unit = {},
-    onExpensesClick: () -> Unit = {}
+    onExpensesClick: () -> Unit = {},
+    onNearbyWorkshopsClick: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
@@ -89,7 +90,7 @@ fun MaintenanceScreen(
             // Aquí irán las cards de mantenimientos luego
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { /* TODO: Navigate to workshops */ },
+                onClick = { onNearbyWorkshopsClick() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)

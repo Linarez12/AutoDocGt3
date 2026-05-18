@@ -55,13 +55,33 @@ fun AddDocumentScreen(
     var documentName by remember { mutableStateOf("") }
 
     var showDialog by remember { mutableStateOf(false) }
-    var selectedImageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var selectedBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     
     val db = remember { Firebase.firestore }
     val auth = remember { Firebase.auth }
 
     val options = listOf("Tarjeta de circulación", "Calcomanía", "Seguro", "Licencia de conducir", "Otro")
     var expanded by remember { mutableStateOf(false) }
+    
+    var selectedVehicle by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var vehicles by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var expandedVehicle by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            db.collection("vehiculos").whereEqualTo("userId", currentUser.uid).get()
+                .addOnSuccessListener { querySnapshot ->
+                    val list = mutableListOf<Map<String, Any>>()
+                    for (doc in querySnapshot.documents) {
+                        val data = doc.data?.toMutableMap() ?: mutableMapOf()
+                        data["id"] = doc.id
+                        list.add(data)
+                    }
+                    vehicles = list
+                }
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -71,7 +91,7 @@ fun AddDocumentScreen(
             try {
                 val inputStream = context.contentResolver.openInputStream(it)
                 val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-                selectedImageBitmap = bitmap?.asImageBitmap()
+                selectedBitmap = bitmap
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -80,7 +100,7 @@ fun AddDocumentScreen(
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap: android.graphics.Bitmap? ->
         bitmap?.let {
-            selectedImageBitmap = it.asImageBitmap()
+            selectedBitmap = it
         }
     }
 
@@ -174,9 +194,9 @@ fun AddDocumentScreen(
                     .clickable { showDialog = true },
                 contentAlignment = Alignment.Center
             ) {
-                if (selectedImageBitmap != null) {
+                if (selectedBitmap != null) {
                     Image(
-                        bitmap = selectedImageBitmap!!,
+                        bitmap = selectedBitmap!!.asImageBitmap(),
                         contentDescription = "Documento escaneado",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -264,6 +284,56 @@ fun AddDocumentScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(text = "Vehículo:", color = Color.Gray, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = selectedVehicle?.let { "${it["placa"]} - ${it["marca"]} - ${it["anio"]}" } ?: "",
+                            onValueChange = {},
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            readOnly = true,
+                            placeholder = { Text("Seleccione un vehículo", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                            trailingIcon = {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = textFieldBackground,
+                                unfocusedContainerColor = textFieldBackground,
+                                focusedBorderColor = Color.Gray,
+                                unfocusedBorderColor = Color.Gray,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Transparent)
+                                .clickable { expandedVehicle = true }
+                        )
+                        DropdownMenu(
+                            expanded = expandedVehicle,
+                            onDismissRequest = { expandedVehicle = false },
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        ) {
+                            vehicles.forEach { v ->
+                                DropdownMenuItem(
+                                    text = { Text("${v["placa"]} - ${v["marca"]} - ${v["anio"]}") },
+                                    onClick = {
+                                        selectedVehicle = v
+                                        expandedVehicle = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Fecha de vencimiento
                     Text(text = "Fecha de vencimiento:", color = Color.Gray, fontSize = 14.sp)
@@ -326,13 +396,23 @@ fun AddDocumentScreen(
 
             Button(
                 onClick = { 
-                    if (documentType.isNotEmpty() && documentName.isNotEmpty() && expiryDate.isNotEmpty()) {
+                    if (documentType.isNotEmpty() && documentName.isNotEmpty() && expiryDate.isNotEmpty() && selectedVehicle != null) {
                         val currentUser = auth.currentUser
                         if (currentUser != null) {
+                            var photoBase64 = ""
+                            if (selectedBitmap != null) {
+                                val baos = java.io.ByteArrayOutputStream()
+                                selectedBitmap!!.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos)
+                                val byteArray = baos.toByteArray()
+                                photoBase64 = android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
+                            }
+                            
                             val docData = hashMapOf(
                                 "tipo" to documentType,
                                 "fecha_vencimiento" to expiryDate,
-                                "nombre" to documentName
+                                "nombre" to documentName,
+                                "foto" to photoBase64,
+                                "vehiculoId" to (selectedVehicle?.get("id") as? String ?: "")
                             )
                             db.collection("usuarios").document(currentUser.uid).collection("documentos")
                                 .add(docData)

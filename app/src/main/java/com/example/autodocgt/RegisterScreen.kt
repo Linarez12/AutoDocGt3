@@ -329,19 +329,7 @@ fun RegisterScreen(
                 Text("G", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 24.sp)
             }
 
-            Spacer(modifier = Modifier.width(24.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(4.dp, CircleShape)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .clickable { onRegisterSuccess() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text("f", color = Color.Blue, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            }
         }
     }
 }

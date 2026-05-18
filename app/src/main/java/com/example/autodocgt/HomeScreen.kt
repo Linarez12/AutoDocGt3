@@ -20,6 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -31,20 +39,23 @@ fun HomeScreen(
     onNavigateToMaintenance: () -> Unit = {},
     onNavigateToDocuments: () -> Unit = {},
     onNavigateToReminders: () -> Unit = {},
-    onNavigateToExpenses: () -> Unit = {}
+    onNavigateToExpenses: () -> Unit = {},
+    onNavigateToAddVehicle: () -> Unit = {},
+    onNavigateToVehicleDetails: (Map<String, Any>) -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
     val context = LocalContext.current
     
     var userName by remember { mutableStateOf("Usuario") }
+    var vehicles by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var isLoadingVehicles by remember { mutableStateOf(true) }
     val auth = Firebase.auth
     val db = Firebase.firestore
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
-            // Resultado de la cámara
         }
     )
 
@@ -62,6 +73,23 @@ fun HomeScreen(
                 .addOnFailureListener {
                     userName = currentUser.displayName ?: "Usuario"
                 }
+                
+            db.collection("vehiculos").whereEqualTo("userId", currentUser.uid).get()
+                .addOnSuccessListener { querySnapshot ->
+                    val list = mutableListOf<Map<String, Any>>()
+                    for (doc in querySnapshot.documents) {
+                        val data = doc.data?.toMutableMap() ?: mutableMapOf()
+                        data["id"] = doc.id
+                        list.add(data)
+                    }
+                    vehicles = list
+                    isLoadingVehicles = false
+                }
+                .addOnFailureListener {
+                    isLoadingVehicles = false
+                }
+        } else {
+            isLoadingVehicles = false
         }
     }
 
@@ -90,19 +118,229 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Hola, $userName",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = primaryDarkBlue
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = "Hola, $userName",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryDarkBlue
+                )
+                
+                if (!isLoadingVehicles && vehicles.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = onNavigateToAddVehicle,
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Agregar Vehículo",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Nuevo Vehículo",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
             
-            Column(modifier = Modifier.weight(1f)) {
-                Spacer(modifier = Modifier.height(20.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (!isLoadingVehicles && vehicles.isEmpty()) {
+                    Text(
+                        text = "Auno no has agregado ningun vehiculo por el momento",
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    Button(
+                        onClick = onNavigateToAddVehicle,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
+                    ) {
+                        Text("Agregar Vehiculo", color = Color.White)
+                    }
+                } else if (!isLoadingVehicles && vehicles.isNotEmpty()) {
+                    val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { vehicles.size })
+                    
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        androidx.compose.foundation.pager.HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.weight(1f)
+                        ) { page ->
+                            val v = vehicles[page]
+                            val marca = v["marca"] as? String ?: ""
+                            val modelo = v["modelo"] as? String ?: ""
+                            val placa = v["placa"] as? String ?: ""
+                            val kilometraje = v["kilometraje"] as? String ?: ""
+                            val photoBase64 = v["foto"] as? String ?: ""
+                            
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(horizontal = 4.dp)
+                            ) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Auto No.${page + 1}",
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = primaryDarkBlue
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1.2f)) {
+                                                Text(text = "$marca $modelo", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(text = "Placa: $placa", color = primaryDarkBlue, fontWeight = FontWeight.Medium)
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(text = "Kilometraje: $kilometraje", color = primaryDarkBlue, fontWeight = FontWeight.Medium)
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Button(
+                                                    onClick = { onNavigateToVehicleDetails(v) },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue),
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                                    modifier = Modifier.height(36.dp)
+                                                ) {
+                                                    Text("Ver Detalles", color = Color.White, fontSize = 12.sp)
+                                                }
+                                            }
+                                            Image(
+                                                painter = painterResource(id = R.drawable.vehiculo),
+                                                contentDescription = "Car",
+                                                modifier = Modifier.weight(0.8f).height(90.dp),
+                                                contentScale = ContentScale.Fit
+                                            )
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        Row(
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            repeat(vehicles.size) { iteration ->
+                                                val color = if (pagerState.currentPage == iteration) primaryDarkBlue else Color.LightGray
+                                                Box(
+                                                    modifier = Modifier
+                                                        .padding(2.dp)
+                                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                                        .background(color)
+                                                        .size(8.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp)
+                                    ) {
+                                        Text(
+                                            text = "Fotografia del vehículo",
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = primaryDarkBlue
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        
+                                        if (photoBase64.isNotEmpty()) {
+                                            val bitmapImage = remember(photoBase64) {
+                                                try {
+                                                    val imageBytes = android.util.Base64.decode(photoBase64, android.util.Base64.DEFAULT)
+                                                    android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                                } catch (e: Exception) { null }
+                                            }
+                                            if (bitmapImage != null) {
+                                                Image(
+                                                    bitmap = bitmapImage.asImageBitmap(),
+                                                    contentDescription = "Foto Vehículo",
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(200.dp)
+                                                        .clip(RoundedCornerShape(16.dp)),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(200.dp)
+                                                        .clip(RoundedCornerShape(16.dp))
+                                                        .background(Color.LightGray),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text("Foto no disponible", color = Color.DarkGray)
+                                                }
+                                            }
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(200.dp)
+                                                    .clip(RoundedCornerShape(16.dp))
+                                                    .background(Color.LightGray),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text("Sin foto", color = Color.DarkGray)
+                                            }
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+                                        val currentDate = sdf.format(java.util.Date())
+                                        Text(text = "Fecha de agregado: $currentDate", color = Color.Gray, fontSize = 14.sp)
+                                        Text(text = "Ubicación: Guatemala", color = Color.Gray, fontSize = 14.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             Button(
-                onClick = { /* TODO */ },
+                onClick = {  },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)

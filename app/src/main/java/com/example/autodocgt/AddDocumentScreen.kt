@@ -412,12 +412,16 @@ fun AddDocumentScreen(
                                 photoBase64 = android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
                             }
                             
+                            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                            val currentDate = sdf.format(Calendar.getInstance().time)
+
                             val docData = hashMapOf(
                                 "tipo" to documentType,
                                 "fecha_vencimiento" to expiryDate,
                                 "nombre" to documentName,
                                 "foto" to photoBase64,
-                                "vehiculoId" to if (documentType == "Licencia de conducir") "" else (selectedVehicle?.get("id") as? String ?: "")
+                                "vehiculoId" to if (documentType == "Licencia de conducir") "" else (selectedVehicle?.get("id") as? String ?: ""),
+                                "fecha_agregado" to currentDate
                             )
                             db.collection("usuarios").document(currentUser.uid).collection("documentos")
                                 .add(docData)

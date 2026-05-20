@@ -31,6 +31,8 @@ class MainActivity : ComponentActivity() {
             AutoDocGtTheme {
                 var currentScreen by remember { mutableStateOf(startScreen) }
                 var selectedVehicleForDetails by remember { mutableStateOf<Map<String, Any>?>(null) }
+                var selectedDocumentForDetails by remember { mutableStateOf<Map<String, Any>?>(null) }
+                var selectedDocumentVehicleName by remember { mutableStateOf("") }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val modifierWithPadding = Modifier.padding(innerPadding)
@@ -107,8 +109,26 @@ class MainActivity : ComponentActivity() {
                                 onMaintenanceClick = { currentScreen = "maintenance" },
                                 onRemindersClick = { currentScreen = "reminders" },
                                 onExpensesClick = { currentScreen = "expenses" },
-                                onNavigateToAddDocument = { currentScreen = "add_document" }
+                                onNavigateToAddDocument = { currentScreen = "add_document" },
+                                onNavigateToDocumentDetails = { doc, vehicleLabel ->
+                                    selectedDocumentForDetails = doc
+                                    selectedDocumentVehicleName = vehicleLabel
+                                    currentScreen = "document_details"
+                                }
                             )
+                        }
+                        "document_details" -> {
+                            BackHandler { currentScreen = "documents" }
+                            if (selectedDocumentForDetails != null) {
+                                DocumentDetailsScreen(
+                                    document = selectedDocumentForDetails!!,
+                                    vehicleName = selectedDocumentVehicleName,
+                                    modifier = modifierWithPadding,
+                                    onBack = { currentScreen = "documents" }
+                                )
+                            } else {
+                                currentScreen = "documents"
+                            }
                         }
                         "expenses" -> {
                             BackHandler { currentScreen = "home" }

@@ -31,7 +31,8 @@ fun DocumentsScreen(
     onMaintenanceClick: () -> Unit = {},
     onRemindersClick: () -> Unit = {},
     onExpensesClick: () -> Unit = {},
-    onNavigateToAddDocument: () -> Unit = {}
+    onNavigateToAddDocument: () -> Unit = {},
+    onNavigateToDocumentDetails: (Map<String, Any>, String) -> Unit = { _, _ -> }
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
@@ -47,7 +48,13 @@ fun DocumentsScreen(
             db.collection("usuarios").document(currentUser.uid).collection("documentos")
                 .addSnapshotListener { snapshot, _ ->
                     if (snapshot != null) {
-                        documentos = snapshot.documents.mapNotNull { it.data }
+                        documentos = snapshot.documents.mapNotNull { doc ->
+                            val data = doc.data?.toMutableMap()
+                            if (data != null) {
+                                data["id"] = doc.id
+                                data
+                            } else null
+                        }
                     }
                 }
             db.collection("vehiculos").whereEqualTo("userId", currentUser.uid)
@@ -115,9 +122,8 @@ fun DocumentsScreen(
                     }
                     items(licencias) { doc ->
                         DocumentCard(
-                            tipo = doc["tipo"] as? String ?: "",
-                            fecha = doc["fecha_vencimiento"] as? String ?: "",
-                            nombre = doc["nombre"] as? String ?: ""
+                            document = doc,
+                            onDetailsClick = { onNavigateToDocumentDetails(doc, "") }
                         )
                     }
                 }
@@ -136,9 +142,8 @@ fun DocumentsScreen(
                         }
                         items(carDocs) { doc ->
                             DocumentCard(
-                                tipo = doc["tipo"] as? String ?: "",
-                                fecha = doc["fecha_vencimiento"] as? String ?: "",
-                                nombre = doc["nombre"] as? String ?: ""
+                                document = doc,
+                                onDetailsClick = { onNavigateToDocumentDetails(doc, "Carro no.${index + 1}") }
                             )
                         }
                     }
@@ -160,10 +165,12 @@ fun DocumentsScreen(
                         )
                     }
                     items(otrosDocs) { doc ->
+                        val vehicleId = doc["vehiculoId"] as? String ?: ""
+                        val associatedVehicleIndex = vehiculos.indexOfFirst { it["id"] == vehicleId }
+                        val vehicleLabel = if (associatedVehicleIndex != -1) "Carro no.${associatedVehicleIndex + 1}" else ""
                         DocumentCard(
-                            tipo = doc["tipo"] as? String ?: "",
-                            fecha = doc["fecha_vencimiento"] as? String ?: "",
-                            nombre = doc["nombre"] as? String ?: ""
+                            document = doc,
+                            onDetailsClick = { onNavigateToDocumentDetails(doc, vehicleLabel) }
                         )
                     }
                 }
@@ -212,7 +219,14 @@ fun DocumentsTopBar(backgroundColor: Color, onBackClick: () -> Unit) {
 }
 
 @Composable
-fun DocumentCard(tipo: String, fecha: String, nombre: String) {
+fun DocumentCard(
+    document: Map<String, Any>,
+    onDetailsClick: () -> Unit
+) {
+    val tipo = document["tipo"] as? String ?: ""
+    val fecha = document["fecha_vencimiento"] as? String ?: ""
+    val nombre = document["nombre"] as? String ?: ""
+
     val isExpired = remember(fecha) {
         try {
             val formatter = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
@@ -268,7 +282,7 @@ fun DocumentCard(tipo: String, fecha: String, nombre: String) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
-                        onClick = { /* TODO */ },
+                        onClick = onDetailsClick,
                         modifier = Modifier.height(36.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16528E)),

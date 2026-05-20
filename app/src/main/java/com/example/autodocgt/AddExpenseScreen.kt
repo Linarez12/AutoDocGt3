@@ -275,7 +275,7 @@ fun AddExpenseScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
             ) {
                 Text(
-                    if (photoBase64.isEmpty()) "+ Escanear Factura" else "Factura Escaneada",
+                    if (photoBase64.isEmpty()) "+ Agregar Factura" else "Factura Agregada",
                     color = Color.White,
                     fontSize = 18.sp
                 )

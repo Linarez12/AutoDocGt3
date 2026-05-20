@@ -133,7 +133,7 @@ fun DocumentsScreen(
                     if (carDocs.isNotEmpty()) {
                         item {
                             Text(
-                                text = "Carro no.${index + 1}",
+                                text = "Auto no.${index + 1}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
                                 color = primaryDarkBlue,
@@ -143,7 +143,7 @@ fun DocumentsScreen(
                         items(carDocs) { doc ->
                             DocumentCard(
                                 document = doc,
-                                onDetailsClick = { onNavigateToDocumentDetails(doc, "Carro no.${index + 1}") }
+                                onDetailsClick = { onNavigateToDocumentDetails(doc, "Auto no.${index + 1}") }
                             )
                         }
                     }
@@ -167,7 +167,7 @@ fun DocumentsScreen(
                     items(otrosDocs) { doc ->
                         val vehicleId = doc["vehiculoId"] as? String ?: ""
                         val associatedVehicleIndex = vehiculos.indexOfFirst { it["id"] == vehicleId }
-                        val vehicleLabel = if (associatedVehicleIndex != -1) "Carro no.${associatedVehicleIndex + 1}" else ""
+                        val vehicleLabel = if (associatedVehicleIndex != -1) "Auto no.${associatedVehicleIndex + 1}" else ""
                         DocumentCard(
                             document = doc,
                             onDetailsClick = { onNavigateToDocumentDetails(doc, vehicleLabel) }
@@ -223,6 +223,7 @@ fun DocumentCard(
     document: Map<String, Any>,
     onDetailsClick: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val tipo = document["tipo"] as? String ?: ""
     val fecha = document["fecha_vencimiento"] as? String ?: ""
     val nombre = document["nombre"] as? String ?: ""
@@ -292,7 +293,20 @@ fun DocumentCard(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { /* TODO */ },
+                        onClick = { 
+                            val db = com.google.firebase.ktx.Firebase.firestore
+                            val auth = com.google.firebase.ktx.Firebase.auth
+                            val docId = document["id"] as? String
+                            val currentUser = auth.currentUser
+                            if (docId != null && currentUser != null) {
+                                db.collection("usuarios").document(currentUser.uid)
+                                    .collection("documentos").document(docId)
+                                    .update("recordatorioActivo", true)
+                                    .addOnSuccessListener {
+                                        android.widget.Toast.makeText(context, "Recordatorio agregado", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        },
                         modifier = Modifier.height(36.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16528E)),

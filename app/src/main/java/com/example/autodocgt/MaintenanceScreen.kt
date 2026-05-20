@@ -42,7 +42,8 @@ fun MaintenanceScreen(
     onRemindersClick: () -> Unit = {},
     onExpensesClick: () -> Unit = {},
     onNearbyWorkshopsClick: () -> Unit = {},
-    onNavigateToAddMaintenance: () -> Unit = {}
+    onNavigateToAddMaintenance: () -> Unit = {},
+    onNavigateToDetails: (Map<String, Any>, String) -> Unit = { _, _ -> }
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
@@ -79,7 +80,13 @@ fun MaintenanceScreen(
                 .whereEqualTo("tipoCategoria", "Mantenimiento")
                 .addSnapshotListener { snapshot, _ ->
                     if (snapshot != null) {
-                        mantenimientos = snapshot.documents.mapNotNull { it.data }
+                        mantenimientos = snapshot.documents.mapNotNull { doc ->
+                            val data = doc.data?.toMutableMap()
+                            if (data != null) {
+                                data["id"] = doc.id
+                                data
+                            } else null
+                        }
                     }
                 }
         }
@@ -136,11 +143,42 @@ fun MaintenanceScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(mantenimientos) { m ->
-                        val vId = m["vehiculoId"] as? String
-                        val index = vehiculos.indexOfFirst { it["id"] == vId }
-                        val vStr = if (index >= 0) "Carro no.${index + 1} (${vehiculos[index]["placa"]})" else "Vehículo desconocido"
-                        MaintenanceCard(m, vStr)
+                    vehiculos.forEachIndexed { index, v ->
+                        val carMaint = mantenimientos.filter { it["vehiculoId"] == v["id"] }
+                        if (carMaint.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Auto no.${index + 1} (${v["placa"] ?: "Sin placa"})",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = primaryDarkBlue,
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                                )
+                            }
+                            items(carMaint) { m ->
+                                val vStr = "Auto no.${index + 1} (${v["placa"] ?: "Sin placa"})"
+                                MaintenanceCard(m, vStr, onDetailsClick = { onNavigateToDetails(m, vStr) })
+                            }
+                        }
+                    }
+
+                    val otrosMaint = mantenimientos.filter { 
+                        it["vehiculoId"] == null || it["vehiculoId"] == "" || vehiculos.none { v -> v["id"] == it["vehiculoId"] }
+                    }
+                    
+                    if (otrosMaint.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Otros Mantenimientos",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = primaryDarkBlue,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                            )
+                        }
+                        items(otrosMaint) { m ->
+                            MaintenanceCard(m, "Vehículo desconocido", onDetailsClick = { onNavigateToDetails(m, "Vehículo desconocido") })
+                        }
                     }
                 }
             }
@@ -200,10 +238,19 @@ fun MaintenanceTopBar(backgroundColor: Color, onBackClick: () -> Unit) {
 }
 
 @Composable
-fun MaintenanceCard(mantenimiento: Map<String, Any>, vehiculoStr: String) {
+fun MaintenanceCard(mantenimiento: Map<String, Any>, vehiculoStr: String, onDetailsClick: () -> Unit) {
     val tipoServicio = mantenimiento["tipoServicio"] as? String ?: "Servicio"
     val kmActual = mantenimiento["kmActual"] as? String ?: "0"
-    val kmProximo = mantenimiento["kmProximo"] as? String ?: "0"
+    val kmProximo = mantenimiento["kmProximo"] as? String ?: ""
+
+    val iconRes = when (tipoServicio) {
+        "Cambio de aceite" -> R.drawable.cambiodeaceite
+        "Bujias" -> R.drawable.bujias
+        "Frenos" -> R.drawable.frenos
+        "Bateria" -> R.drawable.bateria
+        "Revisión general" -> R.drawable.revisiongeneral
+        else -> R.drawable.img_settings_inicio
+    }
 
     Card(
         modifier = Modifier
@@ -220,9 +267,9 @@ fun MaintenanceCard(mantenimiento: Map<String, Any>, vehiculoStr: String) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.img_settings_inicio),
+                painter = painterResource(id = iconRes),
                 contentDescription = "Mantenimiento Icon",
-                tint = Color(0xFF16528E),
+                tint = if (iconRes == R.drawable.img_settings_inicio) Color(0xFF16528E) else Color.Unspecified,
                 modifier = Modifier.size(60.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -230,19 +277,22 @@ fun MaintenanceCard(mantenimiento: Map<String, Any>, vehiculoStr: String) {
                 Text(text = tipoServicio, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = "Ultimo: $kmActual Km", color = Color.DarkGray, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "Proximo: $kmProximo Km", color = Color.DarkGray, fontSize = 14.sp)
+                if (kmProximo.isNotBlank() && kmProximo != "0") {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = "Proximo: $kmProximo Km", color = Color.DarkGray, fontSize = 14.sp)
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
-                        onClick = { /* TODO: Ver Detalles */ },
-                        modifier = Modifier.weight(1f).height(36.dp),
+                        onClick = onDetailsClick,
+                        modifier = Modifier.height(36.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16528E)),
-                        contentPadding = PaddingValues(0.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                     ) {
                         Text("Ver Detalles", color = Color.White, fontSize = 12.sp)
                     }

@@ -38,7 +38,8 @@ fun ExpensesScreen(
     onMaintenanceClick: () -> Unit = {},
     onDocumentsClick: () -> Unit = {},
     onRemindersClick: () -> Unit = {},
-    onNavigateToAddExpense: () -> Unit = {}
+    onNavigateToAddExpense: () -> Unit = {},
+    onNavigateToReport: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
@@ -162,7 +163,7 @@ fun ExpensesScreen(
                                 grandTotal += carTotal
 
                                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                                    Text(text = "Carro no.${index + 1} (${v["placa"]})", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
+                                    Text(text = "Auto no.${index + 1} (${v["placa"]})", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text("Combustible:", color = Color.DarkGray)
@@ -209,7 +210,7 @@ fun ExpensesScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { /* TODO: View expenses report */ },
+                onClick = onNavigateToReport,
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .padding(bottom = 16.dp)

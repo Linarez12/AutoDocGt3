@@ -107,7 +107,7 @@ fun AddExpenseScreen(
     // Campos Mantenimiento
     var tipoServicio by remember { mutableStateOf("") }
     var expandedServicio by remember { mutableStateOf(false) }
-    val servicioOptions = listOf("Cambio de aceite", "Frenos", "Llantas", "Batería", "Revisión general", "Otro")
+    val servicioOptions = listOf("Cambio de aceite", "Bujias","Frenos","Bateria","Revisión general", "Otro")
     var kmActual by remember { mutableStateOf("") }
     var kmProximo by remember { mutableStateOf("") }
     var taller by remember { mutableStateOf("") }
@@ -123,7 +123,7 @@ fun AddExpenseScreen(
             val baos = java.io.ByteArrayOutputStream()
             bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, baos)
             photoBase64 = android.util.Base64.encodeToString(baos.toByteArray(), android.util.Base64.DEFAULT)
-            Toast.makeText(context, "Factura escaneada", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Factura agregada", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -304,7 +304,7 @@ fun AddExpenseScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
-                            value = selectedVehicle?.let { v -> "Carro no.${vehicles.indexOf(v) + 1}" } ?: "",
+                            value = selectedVehicle?.let { v -> "Auto no.${vehicles.indexOf(v) + 1}" } ?: "",
                             onValueChange = {},
                             modifier = Modifier.fillMaxWidth(),
                             readOnly = true,
@@ -317,7 +317,7 @@ fun AddExpenseScreen(
                         DropdownMenu(expanded = expandedVehicle, onDismissRequest = { expandedVehicle = false }) {
                             vehicles.forEachIndexed { index, v ->
                                 DropdownMenuItem(
-                                    text = { Text("Carro no.${index + 1}") },
+                                    text = { Text("Auto no.${index + 1}") },
                                     onClick = { selectedVehicle = v; expandedVehicle = false }
                                 )
                             }

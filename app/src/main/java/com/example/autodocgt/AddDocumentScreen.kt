@@ -293,7 +293,7 @@ fun AddDocumentScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Box(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
-                                value = selectedVehicle?.let { v -> "Carro no.${vehicles.indexOf(v) + 1}" } ?: "",
+                                value = selectedVehicle?.let { v -> "Auto no.${vehicles.indexOf(v) + 1}" } ?: "",
                                 onValueChange = {},
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -327,7 +327,7 @@ fun AddDocumentScreen(
                             ) {
                                 vehicles.forEachIndexed { index, v ->
                                     DropdownMenuItem(
-                                        text = { Text("Carro no.${index + 1}") },
+                                        text = { Text("Auto no.${index + 1}") },
                                         onClick = {
                                             selectedVehicle = v
                                             expandedVehicle = false

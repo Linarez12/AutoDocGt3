@@ -1,7 +1,10 @@
 package com.example.autodocgt
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,14 +18,38 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.autodocgt.ui.theme.AutoDocGtTheme
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "reminders_channel",
+                "Recordatorios",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Canal para notificaciones de recordatorios"
+            }
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(24, TimeUnit.HOURS)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "ReminderWorker",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
         
         val auth = Firebase.auth
         val startScreen = if (auth.currentUser != null) "home" else "login"
@@ -33,6 +60,26 @@ class MainActivity : ComponentActivity() {
                 var selectedVehicleForDetails by remember { mutableStateOf<Map<String, Any>?>(null) }
                 var selectedDocumentForDetails by remember { mutableStateOf<Map<String, Any>?>(null) }
                 var selectedDocumentVehicleName by remember { mutableStateOf("") }
+                var selectedMaintenanceForDetails by remember { mutableStateOf<Map<String, Any>?>(null) }
+                var selectedMaintenanceVehicleName by remember { mutableStateOf("") }
+
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+                    // Permiso concedido o denegado
+                }
+
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(
+                                this@MainActivity,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val modifierWithPadding = Modifier.padding(innerPadding)
@@ -86,8 +133,14 @@ class MainActivity : ComponentActivity() {
                                 onRemindersClick = { currentScreen = "reminders" },
                                 onExpensesClick = { currentScreen = "expenses" },
                                 onNearbyWorkshopsClick = { currentScreen = "nearby_workshops" },
-                                onNavigateToAddMaintenance = { currentScreen = "add_maintenance" }
+                                onNavigateToAddMaintenance = { currentScreen = "add_maintenance" },
+                                onNavigateToDetails = { mantenimiento, vehicleStr ->
+                                    selectedMaintenanceForDetails = mantenimiento
+                                    selectedMaintenanceVehicleName = vehicleStr
+                                    currentScreen = "mantenimiento_detalles"
+                                }
                             )
+
                         }
                         "reminders" -> {
                             BackHandler { currentScreen = "home" }
@@ -139,7 +192,25 @@ class MainActivity : ComponentActivity() {
                                 onMaintenanceClick = { currentScreen = "maintenance" },
                                 onDocumentsClick = { currentScreen = "documents" },
                                 onRemindersClick = { currentScreen = "reminders" },
-                                onNavigateToAddExpense = { currentScreen = "add_expense" }
+                                onNavigateToAddExpense = { currentScreen = "add_expense" },
+                                onNavigateToReport = { currentScreen = "reporte_gastos" }
+                            )
+                        }
+                        "reporte_gastos" -> {
+                            BackHandler { currentScreen = "expenses" }
+                            ReporteGastosScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "expenses" },
+                                onDetailsClick = { gasto, vehicleName ->
+                                    selectedMaintenanceForDetails = gasto
+                                    selectedMaintenanceVehicleName = vehicleName
+                                    val tipoCategoria = gasto["tipoCategoria"] as? String ?: ""
+                                    when (tipoCategoria) {
+                                        "Combustible" -> currentScreen = "combustible_detalles"
+                                        "Mantenimiento" -> currentScreen = "mantenimiento_detalles_from_report"
+                                        else -> currentScreen = "otros_gastos_detalles"
+                                    }
+                                }
                             )
                         }
                         "add_expense" -> {
@@ -206,6 +277,58 @@ class MainActivity : ComponentActivity() {
                                 onBack = { currentScreen = "maintenance" },
                                 modifier = modifierWithPadding
                             )
+                        }
+                        "mantenimiento_detalles" -> {
+                            BackHandler { currentScreen = "maintenance" }
+                            if (selectedMaintenanceForDetails != null) {
+                                MantenimientoDetalles(
+                                    mantenimiento = selectedMaintenanceForDetails!!,
+                                    vehiculoStr = selectedMaintenanceVehicleName,
+                                    modifier = modifierWithPadding,
+                                    onBack = { currentScreen = "maintenance" }
+                                )
+                            } else {
+                                currentScreen = "maintenance"
+                            }
+                        }
+                        "mantenimiento_detalles_from_report" -> {
+                            BackHandler { currentScreen = "reporte_gastos" }
+                            if (selectedMaintenanceForDetails != null) {
+                                MantenimientoDetalles(
+                                    mantenimiento = selectedMaintenanceForDetails!!,
+                                    vehiculoStr = selectedMaintenanceVehicleName,
+                                    modifier = modifierWithPadding,
+                                    onBack = { currentScreen = "reporte_gastos" }
+                                )
+                            } else {
+                                currentScreen = "reporte_gastos"
+                            }
+                        }
+                        "combustible_detalles" -> {
+                            BackHandler { currentScreen = "reporte_gastos" }
+                            if (selectedMaintenanceForDetails != null) {
+                                CombustibleDetalles(
+                                    gasto = selectedMaintenanceForDetails!!,
+                                    vehiculoStr = selectedMaintenanceVehicleName,
+                                    modifier = modifierWithPadding,
+                                    onBack = { currentScreen = "reporte_gastos" }
+                                )
+                            } else {
+                                currentScreen = "reporte_gastos"
+                            }
+                        }
+                        "otros_gastos_detalles" -> {
+                            BackHandler { currentScreen = "reporte_gastos" }
+                            if (selectedMaintenanceForDetails != null) {
+                                OtrosGastosDetalles(
+                                    gasto = selectedMaintenanceForDetails!!,
+                                    vehiculoStr = selectedMaintenanceVehicleName,
+                                    modifier = modifierWithPadding,
+                                    onBack = { currentScreen = "reporte_gastos" }
+                                )
+                            } else {
+                                currentScreen = "reporte_gastos"
+                            }
                         }
                     }
                 }

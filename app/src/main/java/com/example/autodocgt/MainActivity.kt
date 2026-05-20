@@ -83,7 +83,8 @@ class MainActivity : ComponentActivity() {
                                 onDocumentsClick = { currentScreen = "documents" },
                                 onRemindersClick = { currentScreen = "reminders" },
                                 onExpensesClick = { currentScreen = "expenses" },
-                                onNearbyWorkshopsClick = { currentScreen = "nearby_workshops" }
+                                onNearbyWorkshopsClick = { currentScreen = "nearby_workshops" },
+                                onNavigateToAddMaintenance = { currentScreen = "add_maintenance" }
                             )
                         }
                         "reminders" -> {
@@ -117,7 +118,24 @@ class MainActivity : ComponentActivity() {
                                 onHomeClick = { currentScreen = "home" },
                                 onMaintenanceClick = { currentScreen = "maintenance" },
                                 onDocumentsClick = { currentScreen = "documents" },
-                                onRemindersClick = { currentScreen = "reminders" }
+                                onRemindersClick = { currentScreen = "reminders" },
+                                onNavigateToAddExpense = { currentScreen = "add_expense" }
+                            )
+                        }
+                        "add_expense" -> {
+                            BackHandler { currentScreen = "expenses" }
+                            AddExpenseScreen(
+                                initialTab = 0,
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "expenses" }
+                            )
+                        }
+                        "add_maintenance" -> {
+                            BackHandler { currentScreen = "maintenance" }
+                            AddExpenseScreen(
+                                initialTab = 1,
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "maintenance" }
                             )
                         }
                         "add_document" -> {

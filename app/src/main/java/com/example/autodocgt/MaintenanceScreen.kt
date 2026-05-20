@@ -13,14 +13,25 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 @Composable
 fun MaintenanceScreen(
@@ -30,11 +41,17 @@ fun MaintenanceScreen(
     onDocumentsClick: () -> Unit = {},
     onRemindersClick: () -> Unit = {},
     onExpensesClick: () -> Unit = {},
-    onNearbyWorkshopsClick: () -> Unit = {}
+    onNearbyWorkshopsClick: () -> Unit = {},
+    onNavigateToAddMaintenance: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
     val context = LocalContext.current
+
+    val db = remember { Firebase.firestore }
+    val auth = remember { Firebase.auth }
+    var mantenimientos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var vehiculos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
 
     val permissionsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -44,6 +61,29 @@ fun MaintenanceScreen(
     )
 
     LaunchedEffect(Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            db.collection("vehiculos").whereEqualTo("userId", currentUser.uid)
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        vehiculos = snapshot.documents.mapNotNull { doc ->
+                            val data = doc.data?.toMutableMap()
+                            if (data != null) {
+                                data["id"] = doc.id
+                                data
+                            } else null
+                        }
+                    }
+                }
+            db.collection("usuarios").document(currentUser.uid).collection("gastos")
+                .whereEqualTo("tipoCategoria", "Mantenimiento")
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        mantenimientos = snapshot.documents.mapNotNull { it.data }
+                    }
+                }
+        }
+        
         val permissionsToRequest = arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
@@ -87,8 +127,24 @@ fun MaintenanceScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Aquí irán las cards de mantenimientos luego
-            Spacer(modifier = Modifier.weight(1f))
+            if (mantenimientos.isEmpty()) {
+                Spacer(modifier = Modifier.weight(1f))
+                Text("No hay mantenimientos registrados", color = Color.Gray)
+                Spacer(modifier = Modifier.weight(1f))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(mantenimientos) { m ->
+                        val vId = m["vehiculoId"] as? String
+                        val index = vehiculos.indexOfFirst { it["id"] == vId }
+                        val vStr = if (index >= 0) "Carro no.${index + 1} (${vehiculos[index]["placa"]})" else "Vehículo desconocido"
+                        MaintenanceCard(m, vStr)
+                    }
+                }
+            }
+            
             Button(
                 onClick = { onNearbyWorkshopsClick() },
                 modifier = Modifier
@@ -102,7 +158,7 @@ fun MaintenanceScreen(
             }
 
             Button(
-                onClick = { /* TODO: Navigate to register maintenance */ },
+                onClick = { onNavigateToAddMaintenance() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
@@ -140,5 +196,58 @@ fun MaintenanceTopBar(backgroundColor: Color, onBackClick: () -> Unit) {
             fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold
         )
+    }
+}
+
+@Composable
+fun MaintenanceCard(mantenimiento: Map<String, Any>, vehiculoStr: String) {
+    val tipoServicio = mantenimiento["tipoServicio"] as? String ?: "Servicio"
+    val kmActual = mantenimiento["kmActual"] as? String ?: "0"
+    val kmProximo = mantenimiento["kmProximo"] as? String ?: "0"
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.img_settings_inicio),
+                contentDescription = "Mantenimiento Icon",
+                tint = Color(0xFF16528E),
+                modifier = Modifier.size(60.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = tipoServicio, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "Ultimo: $kmActual Km", color = Color.DarkGray, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(text = "Proximo: $kmProximo Km", color = Color.DarkGray, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { /* TODO: Ver Detalles */ },
+                        modifier = Modifier.weight(1f).height(36.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16528E)),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("Ver Detalles", color = Color.White, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
     }
 }

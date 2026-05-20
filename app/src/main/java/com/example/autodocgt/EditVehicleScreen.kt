@@ -29,7 +29,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import java.io.ByteArrayOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -50,10 +56,14 @@ fun EditVehicleScreen(
     var placa by remember { mutableStateOf(vehicle["placa"] as? String ?: "") }
     var colorVehiculo by remember { mutableStateOf(vehicle["color"] as? String ?: "") }
     var combustible by remember { mutableStateOf(vehicle["combustible"] as? String ?: "") }
-    var kilometraje by remember { mutableStateOf(vehicle["kilometraje"] as? String ?: "") }
+    var kilometraje by remember { mutableStateOf((vehicle["kilometraje"] as? String ?: "").replace(" KM", "")) }
     var expandedCombustible by remember { mutableStateOf(false) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showPhotoDialog by remember { mutableStateOf(false) }
+    
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+    
     val context = LocalContext.current
     
     LaunchedEffect(vehicle) {
@@ -93,6 +103,32 @@ fun EditVehicleScreen(
             .fillMaxSize()
             .background(backgroundGray)
     ) {
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDatePicker = false
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+                                timeZone = TimeZone.getTimeZone("UTC")
+                            }
+                            anio = formatter.format(Date(millis))
+                        }
+                    }) {
+                        Text("Aceptar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Cancelar")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
         if (showPhotoDialog) {
             AlertDialog(
                 onDismissRequest = { showPhotoDialog = false },
@@ -247,14 +283,22 @@ fun EditVehicleScreen(
                     
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Año:", color = Color.Gray, fontSize = 14.sp)
-                            OutlinedTextField(
-                                value = anio,
-                                onValueChange = { anio = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                textStyle = TextStyle(color = Color.Black)
-                            )
+                            Text(text = "Fecha:", color = Color.Gray, fontSize = 14.sp)
+                            Box {
+                                OutlinedTextField(
+                                    value = anio,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    textStyle = TextStyle(color = Color.Black)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clickable { showDatePicker = true }
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -319,7 +363,18 @@ fun EditVehicleScreen(
                     Text(text = "Kilometraje actual:", color = Color.Gray, fontSize = 14.sp)
                     OutlinedTextField(
                         value = kilometraje,
-                        onValueChange = { kilometraje = it },
+                        onValueChange = { newValue ->
+                            kilometraje = newValue.filter { it.isDigit() }
+                        },
+                        trailingIcon = { 
+                            Text(
+                                text = "KM", 
+                                modifier = Modifier.padding(end = 12.dp), 
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Bold
+                            ) 
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         textStyle = TextStyle(color = Color.Black)
@@ -369,7 +424,7 @@ fun EditVehicleScreen(
                             "placa" to placa,
                             "color" to colorVehiculo,
                             "combustible" to combustible,
-                            "kilometraje" to kilometraje,
+                            "kilometraje" to if (kilometraje.isNotEmpty()) "$kilometraje KM" else "",
                             "foto" to photoBase64
                         )
                         val vehicleId = vehicle["id"] as? String

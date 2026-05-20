@@ -276,6 +276,9 @@ fun AddDocumentScreen(
                                     text = { Text(selectionOption) },
                                     onClick = {
                                         documentType = selectionOption
+                                        if (selectionOption == "Licencia de conducir") {
+                                            selectedVehicle = null
+                                        }
                                         expanded = false
                                     }
                                 )
@@ -283,52 +286,54 @@ fun AddDocumentScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Text(text = "Vehículo:", color = Color.Gray, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = selectedVehicle?.let { "${it["placa"]} - ${it["marca"]} - ${it["anio"]}" } ?: "",
-                            onValueChange = {},
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            readOnly = true,
-                            placeholder = { Text("Seleccione un vehículo", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                            trailingIcon = {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = textFieldBackground,
-                                unfocusedContainerColor = textFieldBackground,
-                                focusedBorderColor = Color.Gray,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        Spacer(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .background(Color.Transparent)
-                                .clickable { expandedVehicle = true }
-                        )
-                        DropdownMenu(
-                            expanded = expandedVehicle,
-                            onDismissRequest = { expandedVehicle = false },
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                        ) {
-                            vehicles.forEach { v ->
-                                DropdownMenuItem(
-                                    text = { Text("${v["placa"]} - ${v["marca"]} - ${v["anio"]}") },
-                                    onClick = {
-                                        selectedVehicle = v
-                                        expandedVehicle = false
-                                    }
-                                )
+                    if (documentType != "Licencia de conducir") {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(text = "Vehículo:", color = Color.Gray, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = selectedVehicle?.let { v -> "Carro no.${vehicles.indexOf(v) + 1}" } ?: "",
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                readOnly = true,
+                                placeholder = { Text("Seleccione un vehículo", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                                trailingIcon = {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = textFieldBackground,
+                                    unfocusedContainerColor = textFieldBackground,
+                                    focusedBorderColor = Color.Gray,
+                                    unfocusedBorderColor = Color.Gray,
+                                    focusedTextColor = Color.Black,
+                                    unfocusedTextColor = Color.Black
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            Spacer(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(Color.Transparent)
+                                    .clickable { expandedVehicle = true }
+                            )
+                            DropdownMenu(
+                                expanded = expandedVehicle,
+                                onDismissRequest = { expandedVehicle = false },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            ) {
+                                vehicles.forEachIndexed { index, v ->
+                                    DropdownMenuItem(
+                                        text = { Text("Carro no.${index + 1}") },
+                                        onClick = {
+                                            selectedVehicle = v
+                                            expandedVehicle = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -396,7 +401,7 @@ fun AddDocumentScreen(
 
             Button(
                 onClick = { 
-                    if (documentType.isNotEmpty() && documentName.isNotEmpty() && expiryDate.isNotEmpty() && selectedVehicle != null) {
+                    if (documentType.isNotEmpty() && documentName.isNotEmpty() && expiryDate.isNotEmpty() && (documentType == "Licencia de conducir" || selectedVehicle != null)) {
                         val currentUser = auth.currentUser
                         if (currentUser != null) {
                             var photoBase64 = ""
@@ -412,7 +417,7 @@ fun AddDocumentScreen(
                                 "fecha_vencimiento" to expiryDate,
                                 "nombre" to documentName,
                                 "foto" to photoBase64,
-                                "vehiculoId" to (selectedVehicle?.get("id") as? String ?: "")
+                                "vehiculoId" to if (documentType == "Licencia de conducir") "" else (selectedVehicle?.get("id") as? String ?: "")
                             )
                             db.collection("usuarios").document(currentUser.uid).collection("documentos")
                                 .add(docData)

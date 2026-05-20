@@ -213,10 +213,27 @@ fun VehicleDetailsScreen(
             ) {
                 Button(
                     onClick = {
-                        if (vehicleId.isNotEmpty()) {
-                            Firebase.firestore.collection("vehiculos").document(vehicleId).delete()
-                                .addOnSuccessListener {
-                                    onBack()
+                        val auth = Firebase.auth
+                        val currentUser = auth.currentUser
+                        if (currentUser != null && vehicleId.isNotEmpty()) {
+                            val db = Firebase.firestore
+                            
+                            db.collection("usuarios")
+                                .document(currentUser.uid)
+                                .collection("documentos")
+                                .whereEqualTo("vehiculoId", vehicleId)
+                                .get()
+                                .addOnSuccessListener { querySnapshot ->
+                                    val batch = db.batch()
+                                    for (doc in querySnapshot.documents) {
+                                        batch.delete(doc.reference)
+                                    }
+                                    batch.commit().addOnCompleteListener {
+                                        db.collection("vehiculos").document(vehicleId).delete()
+                                            .addOnSuccessListener {
+                                                onBack()
+                                            }
+                                    }
                                 }
                         }
                     },

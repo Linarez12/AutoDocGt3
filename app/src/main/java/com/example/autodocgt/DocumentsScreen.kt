@@ -39,6 +39,7 @@ fun DocumentsScreen(
     val db = remember { Firebase.firestore }
     val auth = remember { Firebase.auth }
     var documentos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var vehiculos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         val currentUser = auth.currentUser
@@ -47,6 +48,18 @@ fun DocumentsScreen(
                 .addSnapshotListener { snapshot, _ ->
                     if (snapshot != null) {
                         documentos = snapshot.documents.mapNotNull { it.data }
+                    }
+                }
+            db.collection("vehiculos").whereEqualTo("userId", currentUser.uid)
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        vehiculos = snapshot.documents.mapNotNull { doc ->
+                            val data = doc.data?.toMutableMap()
+                            if (data != null) {
+                                data["id"] = doc.id
+                                data
+                            } else null
+                        }
                     }
                 }
         }
@@ -81,7 +94,7 @@ fun DocumentsScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Lista de documentos
+            // Lista de documentos agrupada
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -89,12 +102,70 @@ fun DocumentsScreen(
                     .padding(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(documentos) { doc ->
-                    DocumentCard(
-                        tipo = doc["tipo"] as? String ?: "",
-                        fecha = doc["fecha_vencimiento"] as? String ?: "",
-                        nombre = doc["nombre"] as? String ?: ""
-                    )
+                val licencias = documentos.filter { it["tipo"] == "Licencia de conducir" }
+                if (licencias.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Licencias",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = primaryDarkBlue,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(licencias) { doc ->
+                        DocumentCard(
+                            tipo = doc["tipo"] as? String ?: "",
+                            fecha = doc["fecha_vencimiento"] as? String ?: "",
+                            nombre = doc["nombre"] as? String ?: ""
+                        )
+                    }
+                }
+
+                vehiculos.forEachIndexed { index, v ->
+                    val carDocs = documentos.filter { it["vehiculoId"] == v["id"] }
+                    if (carDocs.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Carro no.${index + 1}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = primaryDarkBlue,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                            )
+                        }
+                        items(carDocs) { doc ->
+                            DocumentCard(
+                                tipo = doc["tipo"] as? String ?: "",
+                                fecha = doc["fecha_vencimiento"] as? String ?: "",
+                                nombre = doc["nombre"] as? String ?: ""
+                            )
+                        }
+                    }
+                }
+
+                val otrosDocs = documentos.filter { 
+                    it["tipo"] != "Licencia de conducir" && 
+                    (it["vehiculoId"] == null || it["vehiculoId"] == "") 
+                }
+                
+                if (otrosDocs.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Otros Documentos",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = primaryDarkBlue,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                        )
+                    }
+                    items(otrosDocs) { doc ->
+                        DocumentCard(
+                            tipo = doc["tipo"] as? String ?: "",
+                            fecha = doc["fecha_vencimiento"] as? String ?: "",
+                            nombre = doc["nombre"] as? String ?: ""
+                        )
+                    }
                 }
             }
             
@@ -142,6 +213,23 @@ fun DocumentsTopBar(backgroundColor: Color, onBackClick: () -> Unit) {
 
 @Composable
 fun DocumentCard(tipo: String, fecha: String, nombre: String) {
+    val isExpired = remember(fecha) {
+        try {
+            val formatter = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+            val date = formatter.parse(fecha)
+            val today = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }.time
+            date != null && date.before(today)
+        } catch (e: Exception) {
+            false
+        }
+    }
+    val dateColor = if (isExpired) Color.Red else Color(0xFF4CAF50)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -172,7 +260,7 @@ fun DocumentCard(tipo: String, fecha: String, nombre: String) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                 Text(text = tipo, fontSize = 14.sp, color = Color.Gray)
-                Text(text = "Vence: $fecha", fontSize = 14.sp, color = Color.Red, fontWeight = FontWeight.Bold)
+                Text(text = "Vence: $fecha", fontSize = 14.sp, color = dateColor, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),

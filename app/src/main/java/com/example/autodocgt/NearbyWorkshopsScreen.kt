@@ -190,6 +190,8 @@ fun NearbyWorkshopsScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
                 ),
                 singleLine = true
             )
@@ -369,7 +371,7 @@ fun WorkshopCard(workshop: WorkshopResult) {
 }
 
 private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val r = 6371 // Radius of earth in km
+    val r = 6371
     val dLat = Math.toRadians(lat2 - lat1)
     val dLon = Math.toRadians(lon2 - lon1)
     val a = sin(dLat / 2) * sin(dLat / 2) +

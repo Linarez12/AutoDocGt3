@@ -15,6 +15,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.Date
 
 @Composable
 fun ExpensesScreen(
@@ -23,10 +37,61 @@ fun ExpensesScreen(
     onHomeClick: () -> Unit = {},
     onMaintenanceClick: () -> Unit = {},
     onDocumentsClick: () -> Unit = {},
-    onRemindersClick: () -> Unit = {}
+    onRemindersClick: () -> Unit = {},
+    onNavigateToAddExpense: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
+
+    val db = remember { Firebase.firestore }
+    val auth = remember { Firebase.auth }
+    var gastos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var vehiculos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            db.collection("vehiculos").whereEqualTo("userId", currentUser.uid)
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        vehiculos = snapshot.documents.mapNotNull { doc ->
+                            val data = doc.data?.toMutableMap()
+                            if (data != null) {
+                                data["id"] = doc.id
+                                data
+                            } else null
+                        }
+                    }
+                }
+            db.collection("usuarios").document(currentUser.uid).collection("gastos")
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        gastos = snapshot.documents.mapNotNull { it.data }
+                    }
+                }
+        }
+    }
+
+    val currentMonthGastos = remember(gastos) {
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val calendar = Calendar.getInstance()
+        val currentMonth = calendar.get(Calendar.MONTH)
+        val currentYear = calendar.get(Calendar.YEAR)
+        
+        gastos.filter { gasto ->
+            val fechaStr = gasto["fecha"] as? String ?: return@filter false
+            try {
+                val date = formatter.parse(fechaStr)
+                if (date != null) {
+                    val cal = Calendar.getInstance()
+                    cal.time = date
+                    cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
+                } else false
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -80,13 +145,58 @@ fun ExpensesScreen(
                         color = Color.Black,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                    // Aquí irán las filas de la tabla con los gastos luego
-                    Spacer(modifier = Modifier.height(16.dp)) // Espacio vacío por ahora
+                    
+                    var grandTotal = 0.0
+                    
+                    if (vehiculos.isEmpty()) {
+                        Text("No hay vehículos registrados.", color = Color.Gray)
+                    } else {
+                        vehiculos.forEachIndexed { index, v ->
+                            val carGastos = currentMonthGastos.filter { it["vehiculoId"] == v["id"] }
+                            val sumCombustible = carGastos.filter { it["tipoCategoria"] == "Combustible" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
+                            val sumMantenimiento = carGastos.filter { it["tipoCategoria"] == "Mantenimiento" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
+                            val sumOtros = carGastos.filter { it["tipoCategoria"] == "Otros" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
+                            val carTotal = sumCombustible + sumMantenimiento + sumOtros
+                            
+                            if (carTotal > 0 || carGastos.isNotEmpty()) {
+                                grandTotal += carTotal
+
+                                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                                    Text(text = "Carro no.${index + 1} (${v["placa"]})", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Combustible:", color = Color.DarkGray)
+                                        Text("Q${"%.2f".format(sumCombustible)}", color = Color.DarkGray)
+                                    }
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Mantenimiento:", color = Color.DarkGray)
+                                        Text("Q${"%.2f".format(sumMantenimiento)}", color = Color.DarkGray)
+                                    }
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Otros:", color = Color.DarkGray)
+                                        Text("Q${"%.2f".format(sumOtros)}", color = Color.DarkGray)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Total Vehículo:", fontWeight = FontWeight.Bold, color = Color.Black)
+                                        Text("Q${"%.2f".format(carTotal)}", fontWeight = FontWeight.Bold, color = Color.Black)
+                                    }
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("TOTAL DEL MES:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryDarkBlue)
+                            Text("Q${"%.2f".format(grandTotal)}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryDarkBlue)
+                        }
+                    }
                 }
             }
 
             Button(
-                onClick = { /* TODO: Navigate to add expense */ },
+                onClick = { onNavigateToAddExpense() },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .height(48.dp),

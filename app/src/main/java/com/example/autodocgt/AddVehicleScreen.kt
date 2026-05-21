@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -59,6 +60,7 @@ fun AddVehicleScreen(
     var expandedCombustible by remember { mutableStateOf(false) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showPhotoDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
     
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -375,11 +377,17 @@ fun AddVehicleScreen(
             
             Button(
                 onClick = {
+                    if (marca.isEmpty() || modelo.isEmpty() || placa.isEmpty()) {
+                        Toast.makeText(context, "Por favor completa los campos principales (Marca, Modelo, Placa)", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    
                     val uid = auth.currentUser?.uid
                     if (uid != null) {
+                        isLoading = true
                         var photoBase64 = ""
                         if (photoBitmap != null) {
-                            val maxDimension = 800
+                            val maxDimension = 600
                             val originalWidth = photoBitmap!!.width
                             val originalHeight = photoBitmap!!.height
                             
@@ -400,7 +408,7 @@ fun AddVehicleScreen(
                             }
 
                             val baos = java.io.ByteArrayOutputStream()
-                            scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, baos)
+                            scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, baos)
                             val byteArray = baos.toByteArray()
                             photoBase64 = android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
                         }
@@ -418,17 +426,30 @@ fun AddVehicleScreen(
                         )
                         db.collection("vehiculos").add(vehiculoData)
                             .addOnSuccessListener {
+                                isLoading = false
+                                Toast.makeText(context, "Vehículo agregado con éxito", Toast.LENGTH_SHORT).show()
                                 onBack()
                             }
+                            .addOnFailureListener { e ->
+                                isLoading = false
+                                Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Sesión no válida", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(8.dp),
+                enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
             ) {
-                Text("+ Guardar Vehiculo", color = Color.White, fontSize = 16.sp)
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("+ Guardar Vehiculo", color = Color.White, fontSize = 16.sp)
+                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))

@@ -2,6 +2,7 @@ package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -66,6 +67,7 @@ fun HomeScreen(
         
         val currentUser = auth.currentUser
         if (currentUser != null) {
+            // Cargar nombre de usuario
             db.collection("usuarios").document(currentUser.uid).get()
                 .addOnSuccessListener { document ->
                     userName = document.getString("nombre") ?: currentUser.displayName ?: "Usuario"
@@ -74,7 +76,10 @@ fun HomeScreen(
                     userName = currentUser.displayName ?: "Usuario"
                 }
                 
-            db.collection("vehiculos").whereEqualTo("userId", currentUser.uid).get()
+            // Cargar vehículos
+            db.collection("vehiculos")
+                .whereEqualTo("userId", currentUser.uid)
+                .get()
                 .addOnSuccessListener { querySnapshot ->
                     val list = mutableListOf<Map<String, Any>>()
                     for (doc in querySnapshot.documents) {
@@ -85,8 +90,9 @@ fun HomeScreen(
                     vehicles = list
                     isLoadingVehicles = false
                 }
-                .addOnFailureListener {
+                .addOnFailureListener { e ->
                     isLoadingVehicles = false
+                    Toast.makeText(context, "Error al cargar vehículos: ${e.message}", Toast.LENGTH_LONG).show()
                 }
         } else {
             isLoadingVehicles = false
@@ -118,6 +124,7 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Cabecera
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,6 +163,7 @@ fun HomeScreen(
                 }
             }
             
+            // Contenido Central
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -163,9 +171,11 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                if (!isLoadingVehicles && vehicles.isEmpty()) {
+                if (isLoadingVehicles) {
+                    CircularProgressIndicator(color = primaryDarkBlue)
+                } else if (vehicles.isEmpty()) {
                     Text(
-                        text = "Auno no has agregado ningun vehiculo por el momento",
+                        text = "Aun no has agregado ningún vehículo",
                         color = Color.DarkGray,
                         fontSize = 16.sp,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -177,7 +187,8 @@ fun HomeScreen(
                     ) {
                         Text("Agregar Vehiculo", color = Color.White)
                     }
-                } else if (!isLoadingVehicles && vehicles.isNotEmpty()) {
+                } else {
+                    // Mostrar lista de vehículos con Pager
                     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { vehicles.size })
                     
                     Column(
@@ -325,12 +336,6 @@ fun HomeScreen(
                                                 Text("Sin foto", color = Color.DarkGray)
                                             }
                                         }
-                                        
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
-                                        val currentDate = sdf.format(java.util.Date())
-                                        Text(text = "Fecha de agregado: $currentDate", color = Color.Gray, fontSize = 14.sp)
-                                        Text(text = "Ubicación: Guatemala", color = Color.Gray, fontSize = 14.sp)
                                     }
                                 }
                             }

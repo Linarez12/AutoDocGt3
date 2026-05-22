@@ -31,7 +31,7 @@ import java.util.Locale
 import java.util.Date
 
 @Composable
-fun ExpensesScreen(
+fun Gastos(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onHomeClick: () -> Unit = {},

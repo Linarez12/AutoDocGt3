@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -34,7 +34,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VehicleDetailsScreen(
+fun DetallesVehiculo(
     vehicle: Map<String, Any>,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
@@ -42,7 +42,7 @@ fun VehicleDetailsScreen(
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
-    
+
     val marca = vehicle["marca"] as? String ?: ""
     val modelo = vehicle["modelo"] as? String ?: ""
     val anio = vehicle["anio"] as? String ?: ""
@@ -52,20 +52,33 @@ fun VehicleDetailsScreen(
     val kilometraje = vehicle["kilometraje"] as? String ?: "0"
     val combustible = vehicle["combustible"] as? String ?: "N/A"
     val vehicleId = vehicle["id"] as? String ?: ""
-    
+
     var documentCount by remember { mutableStateOf(0) }
-    
+    var maintenanceCount by remember { mutableStateOf(0) }
+
     LaunchedEffect(vehicleId) {
         val auth = Firebase.auth
         val currentUser = auth.currentUser
         if (currentUser != null && vehicleId.isNotEmpty()) {
-            Firebase.firestore.collection("usuarios")
+            val db = Firebase.firestore
+
+            db.collection("usuarios")
                 .document(currentUser.uid)
                 .collection("documentos")
                 .whereEqualTo("vehiculoId", vehicleId)
                 .get()
                 .addOnSuccessListener { querySnapshot ->
                     documentCount = querySnapshot.size()
+                }
+
+            db.collection("usuarios")
+                .document(currentUser.uid)
+                .collection("gastos")
+                .whereEqualTo("vehiculoId", vehicleId)
+                .whereEqualTo("tipoCategoria", "Mantenimiento")
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    maintenanceCount = querySnapshot.size()
                 }
         }
     }
@@ -110,7 +123,7 @@ fun VehicleDetailsScreen(
             }
             Spacer(modifier = Modifier.width(28.dp))
         }
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -131,7 +144,7 @@ fun VehicleDetailsScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     if (photoBase64.isNotEmpty()) {
                         val bitmapImage = remember(photoBase64) {
                             try {
@@ -157,30 +170,30 @@ fun VehicleDetailsScreen(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+
+            Row(modifier = Modifier.fillMaxWidth()) {
                 StatCard(
-                    value = if (kilometraje.uppercase().endsWith("KM")) kilometraje else "$kilometraje KM", 
-                    label = "Kilometraje", 
+                    value = if (kilometraje.uppercase().endsWith("KM")) kilometraje else "$kilometraje KM",
+                    label = "Kilometraje",
                     modifier = Modifier.weight(1f)
                 )
             }
+
             Spacer(modifier = Modifier.height(12.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 StatCard(value = documentCount.toString(), label = "Documentos", modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.width(12.dp))
-                StatCard(value = "0", label = "Mantenimiento", modifier = Modifier.weight(1f))
+                StatCard(value = maintenanceCount.toString(), label = "Mantenimiento", modifier = Modifier.weight(1f))
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -194,22 +207,22 @@ fun VehicleDetailsScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     InfoRow(label = "Placa", value = placa)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
                     InfoRow(label = "Color", value = colorVehiculo)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
                     InfoRow(label = "Combustible", value = combustible)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
-                    
+
                     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                     val currentDate = sdf.format(Date())
                     InfoRow(label = "Agregado", value = currentDate)
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -220,7 +233,7 @@ fun VehicleDetailsScreen(
                         val currentUser = auth.currentUser
                         if (currentUser != null && vehicleId.isNotEmpty()) {
                             val db = Firebase.firestore
-                            
+
                             db.collection("usuarios")
                                 .document(currentUser.uid)
                                 .collection("documentos")

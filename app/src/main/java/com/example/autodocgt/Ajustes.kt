@@ -48,7 +48,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 
 @Composable
-fun SettingsScreen(
+fun Ajustes(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -177,6 +177,8 @@ fun SettingsScreen(
                     NotificationSwitch("Recordatorios", "notifications_enabled")
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                     NotificationSwitch("Mostrar icono de campana", "show_bell_icon")
+                    HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
+                    NotificationSwitch("Notificación al exportar reporte", "export_notification_enabled")
                 }
             }
 
@@ -267,8 +269,8 @@ fun MenuItem(label: String, onClick: (() -> Unit)? = null) {
 
 @Preview(showBackground = true)
 @Composable
-fun SettingsScreenPreview() {
-    SettingsScreen()
+fun AjustesPreview() {
+    Ajustes()
 }
 
 fun exportarReportePdf(context: Context, db: FirebaseFirestore, auth: FirebaseAuth) {
@@ -287,7 +289,10 @@ fun exportarReportePdf(context: Context, db: FirebaseFirestore, auth: FirebaseAu
         }
 
         db.collection("usuarios").document(currentUser.uid).collection("gastos").get().addOnSuccessListener { gastosSnapshot ->
-            val gastosList = gastosSnapshot.documents.mapNotNull { it.data }
+            val gastosList = gastosSnapshot.documents.mapNotNull { doc ->
+                val data = doc.data?.toMutableMap()
+                if (data != null) { data["id"] = doc.id; data } else null
+            }
             
             val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val sortedGastos = gastosList.sortedByDescending {
@@ -297,71 +302,181 @@ fun exportarReportePdf(context: Context, db: FirebaseFirestore, auth: FirebaseAu
 
             try {
                 val pdfDocument = PdfDocument()
-                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4
+                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                var pageNumber = 1
                 var page = pdfDocument.startPage(pageInfo)
                 var canvas = page.canvas
                 val paint = Paint()
+                val paintLine = Paint().apply {
+                    color = android.graphics.Color.parseColor("#CCCCCC")
+                    strokeWidth = 1f
+                }
 
+                val fechaGeneracion = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(java.util.Date())
+
+                paint.color = android.graphics.Color.parseColor("#16528E")
+                paint.textSize = 22f
+                paint.isFakeBoldText = true
                 var yPosition = 50f
-                paint.textSize = 20f
-                paint.isFakeBoldText = true
                 canvas.drawText("Reporte de Gastos", 50f, yPosition, paint)
-                yPosition += 40f
 
-                paint.textSize = 14f
-                paint.isFakeBoldText = true
-                canvas.drawText("Fecha", 50f, yPosition, paint)
-                canvas.drawText("Vehículo", 150f, yPosition, paint)
-                canvas.drawText("Detalle", 300f, yPosition, paint)
-                canvas.drawText("Monto", 500f, yPosition, paint)
-                yPosition += 20f
-
+                paint.color = android.graphics.Color.GRAY
+                paint.textSize = 10f
                 paint.isFakeBoldText = false
-                paint.textSize = 12f
+                yPosition += 18f
+                canvas.drawText("Generado el: $fechaGeneracion", 50f, yPosition, paint)
+
+                yPosition += 12f
+                canvas.drawLine(50f, yPosition, 545f, yPosition, paintLine)
+                yPosition += 16f
+
+                paint.color = android.graphics.Color.parseColor("#16528E")
+                paint.textSize = 11f
+                paint.isFakeBoldText = true
+                canvas.drawText("Fecha",      50f,  yPosition, paint)
+                canvas.drawText("Vehículo",   130f, yPosition, paint)
+                canvas.drawText("Categoría",  210f, yPosition, paint)
+                canvas.drawText("Detalle",    300f, yPosition, paint)
+                canvas.drawText("Notas",      430f, yPosition, paint)
+                canvas.drawText("Monto",      510f, yPosition, paint)
+                yPosition += 6f
+                canvas.drawLine(50f, yPosition, 545f, yPosition, paintLine)
+                yPosition += 14f
+
+                paint.color = android.graphics.Color.BLACK
+                paint.isFakeBoldText = false
+                paint.textSize = 10f
 
                 var total = 0.0
+                var totalCombustible = 0.0
+                var totalMantenimiento = 0.0
+                var totalOtros = 0.0
 
-                for (gasto in sortedGastos) {
-                    if (yPosition > 800f) {
-                        pdfDocument.finishPage(page)
-                        page = pdfDocument.startPage(pageInfo)
-                        canvas = page.canvas
-                        yPosition = 50f
+                fun nuevaPagina() {
+                    pdfDocument.finishPage(page)
+                    pageNumber++
+                    page = pdfDocument.startPage(
+                        PdfDocument.PageInfo.Builder(595, 842, pageNumber).create()
+                    )
+                    canvas = page.canvas
+                    yPosition = 50f
+                    paint.color = android.graphics.Color.parseColor("#16528E")
+                    paint.textSize = 11f
+                    paint.isFakeBoldText = true
+                    canvas.drawText("Fecha",      50f,  yPosition, paint)
+                    canvas.drawText("Vehículo",   130f, yPosition, paint)
+                    canvas.drawText("Categoría",  210f, yPosition, paint)
+                    canvas.drawText("Detalle",    300f, yPosition, paint)
+                    canvas.drawText("Notas",      430f, yPosition, paint)
+                    canvas.drawText("Monto",      510f, yPosition, paint)
+                    yPosition += 6f
+                    canvas.drawLine(50f, yPosition, 545f, yPosition, paintLine)
+                    yPosition += 14f
+                    paint.color = android.graphics.Color.BLACK
+                    paint.isFakeBoldText = false
+                    paint.textSize = 10f
+                }
+
+                for ((index, gasto) in sortedGastos.withIndex()) {
+                    if (yPosition > 780f) nuevaPagina()
+
+                    if (index % 2 == 0) {
+                        val bgPaint = Paint().apply {
+                            color = android.graphics.Color.parseColor("#F5F8FF")
+                        }
+                        canvas.drawRect(50f, yPosition - 11f, 545f, yPosition + 5f, bgPaint)
                     }
 
                     val fecha = gasto["fecha"] as? String ?: ""
                     val vId = gasto["vehiculoId"] as? String ?: ""
                     val vIndex = vehiculos.indexOfFirst { it["id"] == vId }
-                    val autoText = if (vIndex >= 0) "Auto no.${vIndex + 1}" else "Otro"
-                    
+                    val autoText = if (vIndex >= 0) "Auto ${vIndex + 1}" else "Otro"
+
                     val cat = gasto["tipoCategoria"] as? String ?: ""
-                    val sub = if (cat == "Mantenimiento") (gasto["tipoServicio"] as? String ?: "") else (gasto["tipoGasto"] as? String ?: cat)
-                    val detalleText = if (cat == "Combustible") "Gasolina" else sub
-                    
+                    val sub = when (cat) {
+                        "Mantenimiento" -> gasto["tipoServicio"] as? String ?: ""
+                        "Combustible"   -> gasto["tipoCombustible"] as? String ?: "Gasolina"
+                        else            -> gasto["tipoGasto"] as? String ?: cat
+                    }
+                    val detalleText = sub.take(18)
+
+                    val notas = when {
+                        (gasto["notas"] as? String)?.isNotEmpty() == true -> (gasto["notas"] as String).take(14)
+                        (gasto["descripcion"] as? String)?.isNotEmpty() == true -> (gasto["descripcion"] as String).take(14)
+                        else -> "-"
+                    }
+
                     val montoNum = (gasto["monto"] as? Number)?.toDouble() ?: 0.0
-                    val monto = "Q%.2f".format(montoNum)
+                    val montoStr = "Q%.2f".format(montoNum)
                     total += montoNum
+                    when (cat) {
+                        "Combustible"   -> totalCombustible   += montoNum
+                        "Mantenimiento" -> totalMantenimiento += montoNum
+                        else            -> totalOtros         += montoNum
+                    }
 
-                    canvas.drawText(fecha, 50f, yPosition, paint)
-                    canvas.drawText(autoText, 150f, yPosition, paint)
-                    val truncDetail = if (detalleText.length > 20) detalleText.substring(0, 20) + "..." else detalleText
-                    canvas.drawText(truncDetail, 300f, yPosition, paint)
-                    canvas.drawText(monto, 500f, yPosition, paint)
-                    
-                    yPosition += 20f
+                    paint.color = android.graphics.Color.BLACK
+                    canvas.drawText(fecha,       50f,  yPosition, paint)
+                    canvas.drawText(autoText,    130f, yPosition, paint)
+                    canvas.drawText(cat.take(12), 210f, yPosition, paint)
+                    canvas.drawText(detalleText, 300f, yPosition, paint)
+                    canvas.drawText(notas,       430f, yPosition, paint)
+
+                    paint.isFakeBoldText = true
+                    canvas.drawText(montoStr,    510f, yPosition, paint)
+                    paint.isFakeBoldText = false
+
+                    yPosition += 18f
+                    canvas.drawLine(50f, yPosition - 4f, 545f, yPosition - 4f, paintLine)
                 }
 
-                yPosition += 20f
-                if (yPosition > 800f) {
-                    pdfDocument.finishPage(page)
-                    page = pdfDocument.startPage(pageInfo)
-                    canvas = page.canvas
-                    yPosition = 50f
-                }
+                yPosition += 10f
+                if (yPosition > 760f) nuevaPagina()
 
+                paint.color = android.graphics.Color.parseColor("#16528E")
+                paint.textSize = 13f
                 paint.isFakeBoldText = true
-                paint.textSize = 14f
-                canvas.drawText("TOTAL GLOBAL: Q%.2f".format(total), 300f, yPosition, paint)
+                canvas.drawText("TOTAL GLOBAL:", 300f, yPosition, paint)
+                canvas.drawText("Q%.2f".format(total), 460f, yPosition, paint)
+                yPosition += 24f
+
+                if (yPosition > 740f) nuevaPagina()
+
+                canvas.drawLine(50f, yPosition, 545f, yPosition, paintLine)
+                yPosition += 16f
+
+                paint.color = android.graphics.Color.parseColor("#16528E")
+                paint.textSize = 13f
+                paint.isFakeBoldText = true
+                canvas.drawText("Resumen por Categoría", 50f, yPosition, paint)
+                yPosition += 18f
+
+                paint.textSize = 11f
+                paint.isFakeBoldText = false
+                paint.color = android.graphics.Color.BLACK
+
+                canvas.drawText("Combustible:",   50f,  yPosition, paint)
+                paint.isFakeBoldText = true
+                canvas.drawText("Q%.2f".format(totalCombustible), 200f, yPosition, paint)
+                paint.isFakeBoldText = false
+                val pctCombustible = if (total > 0) (totalCombustible / total * 100) else 0.0
+                canvas.drawText("(%.1f%% del total)".format(pctCombustible), 320f, yPosition, paint)
+                yPosition += 16f
+
+                canvas.drawText("Mantenimiento:",  50f,  yPosition, paint)
+                paint.isFakeBoldText = true
+                canvas.drawText("Q%.2f".format(totalMantenimiento), 200f, yPosition, paint)
+                paint.isFakeBoldText = false
+                val pctMant = if (total > 0) (totalMantenimiento / total * 100) else 0.0
+                canvas.drawText("(%.1f%% del total)".format(pctMant), 320f, yPosition, paint)
+                yPosition += 16f
+
+                canvas.drawText("Otros gastos:",   50f,  yPosition, paint)
+                paint.isFakeBoldText = true
+                canvas.drawText("Q%.2f".format(totalOtros), 200f, yPosition, paint)
+                paint.isFakeBoldText = false
+                val pctOtros = if (total > 0) (totalOtros / total * 100) else 0.0
+                canvas.drawText("(%.1f%% del total)".format(pctOtros), 320f, yPosition, paint)
 
                 pdfDocument.finishPage(page)
 
@@ -378,7 +493,13 @@ fun exportarReportePdf(context: Context, db: FirebaseFirestore, auth: FirebaseAu
                 pdfDocument.close()
 
                 Toast.makeText(context, "PDF guardado en Descargas", Toast.LENGTH_LONG).show()
-                sendExportNotification(context, "Reporte Exportado", "El reporte de gastos ha sido guardado.")
+
+                // Solo enviar notificación si el usuario lo tiene activado
+                val sharedPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                val exportNotifEnabled = sharedPrefs.getBoolean("export_notification_enabled", true)
+                if (exportNotifEnabled) {
+                    sendExportNotification(context, "Reporte Exportado", "El reporte de gastos ha sido guardado en Descargas.")
+                }
 
             } catch (e: Exception) {
                 e.printStackTrace()

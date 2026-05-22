@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +22,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 @Composable
-fun MyVehiclesScreen(
+fun MisVehiculos(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onNavigateToDetails: (Map<String, Any>) -> Unit = {}

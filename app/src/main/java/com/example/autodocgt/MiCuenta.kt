@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -39,7 +39,7 @@ import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyAccountScreen(
+fun MiCuenta(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onLogout: () -> Unit = {}

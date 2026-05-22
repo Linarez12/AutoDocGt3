@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -35,7 +35,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 @Composable
-fun MaintenanceScreen(
+fun Mantenimiento(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onHomeClick: () -> Unit = {},

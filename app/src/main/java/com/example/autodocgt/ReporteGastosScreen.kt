@@ -55,7 +55,13 @@ fun ReporteGastosScreen(
             db.collection("usuarios").document(currentUser.uid).collection("gastos")
                 .addSnapshotListener { snapshot, _ ->
                     if (snapshot != null) {
-                        gastos = snapshot.documents.mapNotNull { it.data }
+                        gastos = snapshot.documents.mapNotNull { doc ->
+                            val data = doc.data?.toMutableMap()
+                            if (data != null) {
+                                data["id"] = doc.id
+                                data
+                            } else null
+                        }
                     }
                 }
         }

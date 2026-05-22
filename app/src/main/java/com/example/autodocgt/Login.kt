@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,27 +32,24 @@ import androidx.compose.ui.unit.sp
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 @Composable
-fun RegisterScreen(
+fun Login(
     modifier: Modifier = Modifier,
-    onRegisterSuccess: () -> Unit = {},
-    onBackToLogin: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
     val textFieldBackground = Color(0xFFE0E0E0)
     
     val auth = remember { Firebase.auth }
-    val db = remember { Firebase.firestore }
     val context = LocalContext.current
-    
     var isLoading by remember { mutableStateOf(false) }
-    var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -66,7 +62,7 @@ fun RegisterScreen(
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             auth.signInWithCredential(credential).addOnCompleteListener { authResult ->
                 if (authResult.isSuccessful) {
-                    onRegisterSuccess()
+                    onLoginSuccess()
                 } else {
                     Toast.makeText(context, "Error en Firebase: ${authResult.exception?.message}", Toast.LENGTH_SHORT).show()
                 }
@@ -104,7 +100,7 @@ fun RegisterScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Box(
             modifier = Modifier
@@ -120,57 +116,33 @@ fun RegisterScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
                 Image(
                     painter = painterResource(id = R.drawable.img_principal_login),
                     contentDescription = "Ilustración principal",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(150.dp)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Crear Cuenta",
+                    text = "Bienvenido",
                     color = primaryDarkBlue,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
-                    text = "Regístrate para comenzar",
+                    text = "Inicia sesión para continuar",
                     color = Color.Gray,
                     fontSize = 16.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-                TextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    placeholder = { Text("Nombre completo", color = Color.Gray) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Name",
-                            tint = Color.Gray
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = textFieldBackground,
-                        unfocusedContainerColor = textFieldBackground,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black
-                    ),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                
                 TextField(
                     value = email,
                     onValueChange = { email = it },
@@ -196,7 +168,7 @@ fun RegisterScreen(
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 TextField(
                     value = password,
@@ -223,29 +195,23 @@ fun RegisterScreen(
                     singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     onClick = {
-                        if (email.isNotEmpty() && password.isNotEmpty() && nombre.isNotEmpty()) {
+                        if (email.isNotEmpty() && password.isNotEmpty()) {
                             isLoading = true
-                            auth.createUserWithEmailAndPassword(email, password)
+                            auth.signInWithEmailAndPassword(email, password)
                                 .addOnCompleteListener { task ->
+                                    isLoading = false
                                     if (task.isSuccessful) {
-                                        val uid = auth.currentUser?.uid ?: ""
-                                        val userMap = hashMapOf("nombre" to nombre, "email" to email)
-                                        db.collection("usuarios").document(uid).set(userMap)
-                                            .addOnSuccessListener {
-                                                isLoading = false
-                                                onRegisterSuccess()
-                                            }
-                                            .addOnFailureListener { e ->
-                                                isLoading = false
-                                                Toast.makeText(context, "Error DB: ${e.message}", Toast.LENGTH_SHORT).show()
-                                            }
+                                        onLoginSuccess()
                                     } else {
-                                        isLoading = false
-                                        Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Error: ${task.exception?.message}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 }
                         } else {
@@ -266,28 +232,30 @@ fun RegisterScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text(text = "REGISTRARME", color = Color.White, fontSize = 16.sp)
+                        Text(text = "INICIAR SESION", color = Color.White, fontSize = 16.sp)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
 
                 Text(
                     text = buildAnnotatedString {
                         withStyle(style = SpanStyle(color = Color.DarkGray)) {
-                            append("¿Ya tienes cuenta? ")
+                            append("¿No tienes cuenta? ")
                         }
                         withStyle(style = SpanStyle(color = primaryDarkBlue, fontWeight = FontWeight.Bold)) {
-                            append("Inicia sesión")
+                            append("Registrate")
                         }
                     },
-                    modifier = Modifier.clickable { onBackToLogin() },
+                    modifier = Modifier.clickable { onNavigateToRegister() },
                     fontSize = 14.sp
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
+
 
         Row(
             modifier = Modifier
@@ -304,12 +272,13 @@ fun RegisterScreen(
             HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
+
             Box(
                 modifier = Modifier
                     .size(56.dp)
@@ -328,14 +297,12 @@ fun RegisterScreen(
             ) {
                 Text("G", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 24.sp)
             }
-
-
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun RegisterScreenPreview() {
-    RegisterScreen()
+fun LoginPreview() {
+    Login()
 }

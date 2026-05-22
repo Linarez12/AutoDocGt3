@@ -59,7 +59,7 @@ data class WorkshopResult(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NearbyWorkshopsScreen(
+fun TalleresCercanos(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {

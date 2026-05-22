@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -36,7 +36,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DocumentDetailsScreen(
+fun DetallesDocumento(
     document: Map<String, Any>,
     vehicleName: String,
     modifier: Modifier = Modifier,

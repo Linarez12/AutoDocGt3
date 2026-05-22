@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,7 +29,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun RemindersScreen(
+fun Recordatorios(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onHomeClick: () -> Unit = {},

@@ -3,97 +3,78 @@ package com.example.autodocgt
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.widget.Toast
+import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddVehicleScreen(
+fun EditarVehiculo(
+    vehicle: Map<String, Any>,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
     
-    var marca by remember { mutableStateOf("") }
-    var modelo by remember { mutableStateOf("") }
-    var anio by remember { mutableStateOf("") }
-    var placa by remember { mutableStateOf("") }
-    var colorVehiculo by remember { mutableStateOf("") }
-    var combustible by remember { mutableStateOf("") }
-    var kilometraje by remember { mutableStateOf("") }
+    var marca by remember { mutableStateOf(vehicle["marca"] as? String ?: "") }
+    var modelo by remember { mutableStateOf(vehicle["modelo"] as? String ?: "") }
+    var anio by remember { mutableStateOf(vehicle["anio"] as? String ?: "") }
+    var placa by remember { mutableStateOf(vehicle["placa"] as? String ?: "") }
+    var colorVehiculo by remember { mutableStateOf(vehicle["color"] as? String ?: "") }
+    var combustible by remember { mutableStateOf(vehicle["combustible"] as? String ?: "") }
+    var kilometraje by remember { mutableStateOf((vehicle["kilometraje"] as? String ?: "").replace(" KM", "")) }
     var expandedCombustible by remember { mutableStateOf(false) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showPhotoDialog by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
     
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
     
     val context = LocalContext.current
+    
+    LaunchedEffect(vehicle) {
+        val base64 = vehicle["foto"] as? String ?: ""
+        if (base64.isNotEmpty()) {
+            try {
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                photoBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            } catch (e: Exception) {}
+        }
+    }
     
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
@@ -194,7 +175,7 @@ fun AddVehicleScreen(
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
-                text = "Agregar Vehiculo",
+                text = "Editar Vehiculo",
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
@@ -405,17 +386,11 @@ fun AddVehicleScreen(
             
             Button(
                 onClick = {
-                    if (marca.isEmpty() || modelo.isEmpty() || placa.isEmpty()) {
-                        Toast.makeText(context, "Por favor completa los campos principales (Marca, Modelo, Placa)", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-                    
                     val uid = auth.currentUser?.uid
                     if (uid != null) {
-                        isLoading = true
                         var photoBase64 = ""
                         if (photoBitmap != null) {
-                            val maxDimension = 600
+                            val maxDimension = 800
                             val originalWidth = photoBitmap!!.width
                             val originalHeight = photoBitmap!!.height
                             
@@ -435,10 +410,10 @@ fun AddVehicleScreen(
                                 photoBitmap!!
                             }
 
-                            val baos = java.io.ByteArrayOutputStream()
-                            scaledBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, baos)
+                            val baos = ByteArrayOutputStream()
+                            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos)
                             val byteArray = baos.toByteArray()
-                            photoBase64 = android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT)
+                            photoBase64 = Base64.encodeToString(byteArray, Base64.DEFAULT)
                         }
                         
                         val vehiculoData = hashMapOf(
@@ -452,32 +427,22 @@ fun AddVehicleScreen(
                             "kilometraje" to if (kilometraje.isNotEmpty()) "$kilometraje KM" else "",
                             "foto" to photoBase64
                         )
-                        db.collection("vehiculos").add(vehiculoData)
-                            .addOnSuccessListener {
-                                isLoading = false
-                                Toast.makeText(context, "Vehículo agregado con éxito", Toast.LENGTH_SHORT).show()
-                                onBack()
-                            }
-                            .addOnFailureListener { e ->
-                                isLoading = false
-                                Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
-                            }
-                    } else {
-                        Toast.makeText(context, "Sesión no válida", Toast.LENGTH_SHORT).show()
+                        val vehicleId = vehicle["id"] as? String
+                        if (vehicleId != null) {
+                            db.collection("vehiculos").document(vehicleId).update(vehiculoData as Map<String, Any>)
+                                .addOnSuccessListener {
+                                    onBack()
+                                }
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(8.dp),
-                enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text("+ Guardar Vehiculo", color = Color.White, fontSize = 16.sp)
-                }
+                Text("Guardar Cambios", color = Color.White, fontSize = 16.sp)
             }
             
             Spacer(modifier = Modifier.height(24.dp))

@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
 
                     when (currentScreen) {
                         "login" -> {
-                            LoginScreen(
+                            Login(
                                 modifier = modifierWithPadding,
                                 onLoginSuccess = { currentScreen = "home" },
                                 onNavigateToRegister = { currentScreen = "register" }
@@ -93,14 +93,14 @@ class MainActivity : ComponentActivity() {
                         }
                         "register" -> {
                             BackHandler { currentScreen = "login" }
-                            RegisterScreen(
+                            Registro(
                                 modifier = modifierWithPadding,
                                 onRegisterSuccess = { currentScreen = "home" },
                                 onBackToLogin = { currentScreen = "login" }
                             )
                         }
                         "home" -> {
-                            HomeScreen(
+                            Inicio(
                                 modifier = modifierWithPadding,
                                 onNavigateToSettings = { currentScreen = "settings" },
                                 onNavigateToMaintenance = { currentScreen = "maintenance" },
@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "settings" -> {
                             BackHandler { currentScreen = "home" }
-                            SettingsScreen(
+                            Ajustes(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" },
                                 onLogout = { currentScreen = "login" },
@@ -126,7 +126,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "my_account" -> {
                             BackHandler { currentScreen = "settings" }
-                            MyAccountScreen(
+                            MiCuenta(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "settings" },
                                 onLogout = { currentScreen = "login" }
@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "my_vehicles" -> {
                             BackHandler { currentScreen = "settings" }
-                            MyVehiclesScreen(
+                            MisVehiculos(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "settings" },
                                 onNavigateToDetails = { vehicle ->
@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "maintenance" -> {
                             BackHandler { currentScreen = "home" }
-                            MaintenanceScreen(
+                            Mantenimiento(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" },
                                 onHomeClick = { currentScreen = "home" },
@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "reminders" -> {
                             BackHandler { currentScreen = "home" }
-                            RemindersScreen(
+                            Recordatorios(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" },
                                 onHomeClick = { currentScreen = "home" },
@@ -175,7 +175,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "documents" -> {
                             BackHandler { currentScreen = "home" }
-                            DocumentsScreen(
+                            Documentos(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" },
                                 onHomeClick = { currentScreen = "home" },
@@ -193,7 +193,7 @@ class MainActivity : ComponentActivity() {
                         "document_details" -> {
                             BackHandler { currentScreen = "documents" }
                             if (selectedDocumentForDetails != null) {
-                                DocumentDetailsScreen(
+                                DetallesDocumento(
                                     document = selectedDocumentForDetails!!,
                                     vehicleName = selectedDocumentVehicleName,
                                     modifier = modifierWithPadding,
@@ -205,7 +205,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "expenses" -> {
                             BackHandler { currentScreen = "home" }
-                            ExpensesScreen(
+                            Gastos(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" },
                                 onHomeClick = { currentScreen = "home" },
@@ -235,7 +235,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "add_expense" -> {
                             BackHandler { currentScreen = "expenses" }
-                            AddExpenseScreen(
+                            AgregarGasto(
                                 initialTab = 0,
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "expenses" }
@@ -243,7 +243,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "add_maintenance" -> {
                             BackHandler { currentScreen = "maintenance" }
-                            AddExpenseScreen(
+                            AgregarGasto(
                                 initialTab = 1,
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "maintenance" }
@@ -251,14 +251,14 @@ class MainActivity : ComponentActivity() {
                         }
                         "add_document" -> {
                             BackHandler { currentScreen = "documents" }
-                            AddDocumentScreen(
+                            AgregarDocumento(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "documents" }
                             )
                         }
                         "add_vehicle" -> {
                             BackHandler { currentScreen = "home" }
-                            AddVehicleScreen(
+                            AgregarVehiculo(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" }
                             )
@@ -266,7 +266,7 @@ class MainActivity : ComponentActivity() {
                         "vehicle_details" -> {
                             BackHandler { currentScreen = "home" }
                             if (selectedVehicleForDetails != null) {
-                                VehicleDetailsScreen(
+                                DetallesVehiculo(
                                     vehicle = selectedVehicleForDetails!!,
                                     modifier = modifierWithPadding,
                                     onBack = { currentScreen = "home" },
@@ -282,7 +282,7 @@ class MainActivity : ComponentActivity() {
                         "edit_vehicle" -> {
                             BackHandler { currentScreen = "vehicle_details" }
                             if (selectedVehicleForDetails != null) {
-                                EditVehicleScreen(
+                                EditarVehiculo(
                                     vehicle = selectedVehicleForDetails!!,
                                     modifier = modifierWithPadding,
                                     onBack = { currentScreen = "home" }
@@ -293,7 +293,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "nearby_workshops" -> {
                             BackHandler { currentScreen = "maintenance" }
-                            NearbyWorkshopsScreen(
+                            TalleresCercanos(
                                 onBack = { currentScreen = "maintenance" },
                                 modifier = modifierWithPadding
                             )

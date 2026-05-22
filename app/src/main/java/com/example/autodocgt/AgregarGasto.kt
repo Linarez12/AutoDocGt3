@@ -1,4 +1,4 @@
-﻿package com.example.autodocgt
+package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -40,7 +40,7 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddExpenseScreen(
+fun AgregarGasto(
     initialTab: Int = 0,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {}

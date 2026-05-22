@@ -37,7 +37,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun HomeScreen(
+fun Inicio(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToMaintenance: () -> Unit = {},

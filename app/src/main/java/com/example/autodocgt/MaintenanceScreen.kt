@@ -148,7 +148,7 @@ fun MaintenanceScreen(
                         if (carMaint.isNotEmpty()) {
                             item {
                                 Text(
-                                    text = "Auto no.${index + 1} (${v["placa"] ?: "Sin placa"})",
+                                    text = "Auto no.${index + 1} ",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 20.sp,
                                     color = primaryDarkBlue,
@@ -156,7 +156,7 @@ fun MaintenanceScreen(
                                 )
                             }
                             items(carMaint) { m ->
-                                val vStr = "Auto no.${index + 1} (${v["placa"] ?: "Sin placa"})"
+                                val vStr = "Auto no.${index + 1} "
                                 MaintenanceCard(m, vStr, onDetailsClick = { onNavigateToDetails(m, vStr) })
                             }
                         }

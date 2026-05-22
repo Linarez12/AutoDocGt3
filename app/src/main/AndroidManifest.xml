@@ -18,6 +18,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AutoDocGt">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCz63meTZhmR9e574M02z1oDNwfdfKaK1U" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

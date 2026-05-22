@@ -101,14 +101,22 @@ fun DocumentsScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Lista de documentos agrupada
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            if (documentos.isEmpty()) {
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("No hay documentos registrados", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                 val licencias = documentos.filter { it["tipo"] == "Licencia de conducir" }
                 if (licencias.isNotEmpty()) {
                     item {
@@ -174,6 +182,7 @@ fun DocumentsScreen(
                         )
                     }
                 }
+            }
             }
             
             Button(

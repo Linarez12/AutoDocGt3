@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
@@ -32,6 +31,10 @@ import androidx.compose.material.icons.filled.Add
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun HomeScreen(
@@ -51,6 +54,7 @@ fun HomeScreen(
     var userName by remember { mutableStateOf("Usuario") }
     var vehicles by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var isLoadingVehicles by remember { mutableStateOf(true) }
+    var hasUrgentReminder by remember { mutableStateOf(false) }
     val auth = Firebase.auth
     val db = Firebase.firestore
 
@@ -94,6 +98,38 @@ fun HomeScreen(
                     isLoadingVehicles = false
                     Toast.makeText(context, "Error al cargar vehículos: ${e.message}", Toast.LENGTH_LONG).show()
                 }
+
+            // Verificar recordatorios urgentes (<= 7 días)
+            db.collection("usuarios").document(currentUser.uid).collection("documentos")
+                .whereEqualTo("recordatorioActivo", true)
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        var urgent = false
+                        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        val today = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.time
+
+                        for (doc in snapshot.documents) {
+                            val fecha = doc.getString("fecha_vencimiento") ?: continue
+                            try {
+                                val date = formatter.parse(fecha)
+                                if (date != null) {
+                                    val diff = date.time - today.time
+                                    val days = TimeUnit.MILLISECONDS.toDays(diff)
+                                    if (days <= 7) {
+                                        urgent = true
+                                        break
+                                    }
+                                }
+                            } catch (e: Exception) { }
+                        }
+                        hasUrgentReminder = urgent
+                    }
+                }
         } else {
             isLoadingVehicles = false
         }
@@ -102,7 +138,12 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            HomeTopBar(primaryDarkBlue, onNavigateToSettings)
+            HomeTopBar(
+                backgroundColor = primaryDarkBlue,
+                onSettingsClick = onNavigateToSettings,
+                onBellClick = onNavigateToReminders,
+                hasUrgentReminder = hasUrgentReminder
+            )
         },
         bottomBar = {
             HomeBottomNavigationBar(
@@ -360,7 +401,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeTopBar(backgroundColor: Color, onSettingsClick: () -> Unit) {
+fun HomeTopBar(
+    backgroundColor: Color, 
+    onSettingsClick: () -> Unit,
+    onBellClick: () -> Unit = {},
+    hasUrgentReminder: Boolean = false
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -369,12 +415,23 @@ fun HomeTopBar(backgroundColor: Color, onSettingsClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(
-            painter = painterResource(id = R.drawable.img_bell_inicio),
-            contentDescription = "Notificaciones",
-            tint = Color.White,
-            modifier = Modifier.size(28.dp)
-        )
+        Box(modifier = Modifier.clickable { onBellClick() }) {
+            Icon(
+                painter = painterResource(id = R.drawable.img_bell_inicio),
+                contentDescription = "Notificaciones",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+            if (hasUrgentReminder) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(Color.Red, shape = androidx.compose.foundation.shape.CircleShape)
+                        .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
+                )
+            }
+        }
         Text(
             text = "AUTO DOC GT",
             color = Color.White,

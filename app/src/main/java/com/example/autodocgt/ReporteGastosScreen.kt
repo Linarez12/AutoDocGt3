@@ -73,6 +73,41 @@ fun ReporteGastosScreen(
         }
     }
 
+    val (totalEsteMes, totalEsteAno) = remember(gastos) {
+        var mes = 0.0
+        var ano = 0.0
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val calGasto = java.util.Calendar.getInstance()
+        val calNow = java.util.Calendar.getInstance()
+        val currentMonth = calNow.get(java.util.Calendar.MONTH)
+        val currentYear = calNow.get(java.util.Calendar.YEAR)
+
+        for (gasto in gastos) {
+            val fechaStr = gasto["fecha"] as? String ?: ""
+            val date = try { formatter.parse(fechaStr) } catch(e: Exception) { null }
+            if (date != null) {
+                calGasto.time = date
+                val gastoMonth = calGasto.get(java.util.Calendar.MONTH)
+                val gastoYear = calGasto.get(java.util.Calendar.YEAR)
+                val monto = (gasto["monto"] as? Number)?.toDouble() ?: 0.0
+                
+                if (gastoYear == currentYear) {
+                    ano += monto
+                    if (gastoMonth == currentMonth) {
+                        mes += monto
+                    }
+                }
+            }
+        }
+        Pair(mes, ano)
+    }
+
+    val formatMonto: (Double) -> String = { monto ->
+        val df = java.text.DecimalFormat("#,##0.##", java.text.DecimalFormatSymbols(Locale.US))
+        df.minimumFractionDigits = 2
+        "Q${df.format(monto)}"
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -89,6 +124,67 @@ fun ReporteGastosScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = formatMonto(totalEsteMes),
+                            color = primaryDarkBlue,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = "Este mes",
+                            color = Color.Gray,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                Card(
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = formatMonto(totalEsteAno),
+                            color = primaryDarkBlue,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = "Este año",
+                            color = Color.Gray,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
             if (sortedGastos.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No hay gastos registrados", color = Color.Gray)

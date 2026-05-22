@@ -74,7 +74,6 @@ fun NearbyWorkshopsScreen(
     var workshops by remember { mutableStateOf<List<WorkshopResult>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    // Posición inicial temporal (se actualizará al obtener el GPS)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(14.6349, -90.5069), 12f)
     }

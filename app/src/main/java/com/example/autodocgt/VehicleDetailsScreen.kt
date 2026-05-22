@@ -164,14 +164,22 @@ fun VehicleDetailsScreen(
             
             // Stats Row
             Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                StatCard(
+                    value = if (kilometraje.uppercase().endsWith("KM")) kilometraje else "$kilometraje KM", 
+                    label = "Kilometraje", 
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatCard(value = kilometraje, label = "Kilometraje", modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(12.dp))
                 StatCard(value = documentCount.toString(), label = "Documentos", modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.width(12.dp))
-                StatCard(value = "0", label = "Multas", modifier = Modifier.weight(1f))
+                StatCard(value = "0", label = "Mantenimiento", modifier = Modifier.weight(1f))
             }
             
             Spacer(modifier = Modifier.height(16.dp))

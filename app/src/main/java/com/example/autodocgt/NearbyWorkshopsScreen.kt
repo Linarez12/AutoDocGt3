@@ -309,7 +309,26 @@ fun NearbyWorkshopsScreen(
                     }
                 } else {
                     LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 16.dp)) {
-                        items(workshops) { WorkshopCard(it) }
+                        items(workshops) { ws -> 
+                            WorkshopCard(
+                                workshop = ws,
+                                onClick = {
+                                    scope.launch {
+                                        cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(LatLng(ws.lat, ws.lon), 15f))
+                                    }
+                                },
+                                onRouteClick = {
+                                    try {
+                                        val gmmIntentUri = android.net.Uri.parse("google.navigation:q=${ws.lat},${ws.lon}")
+                                        val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+                                        mapIntent.setPackage("com.google.android.apps.maps")
+                                        context.startActivity(mapIntent)
+                                    } catch (e: Exception) {
+                                        android.widget.Toast.makeText(context, "No se pudo abrir Google Maps", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            ) 
+                        }
                     }
                 }
             }
@@ -318,9 +337,16 @@ fun NearbyWorkshopsScreen(
 }
 
 @Composable
-fun WorkshopCard(workshop: WorkshopResult) {
+fun WorkshopCard(
+    workshop: WorkshopResult,
+    onClick: () -> Unit,
+    onRouteClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(12.dp)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(12.dp))
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -338,6 +364,16 @@ fun WorkshopCard(workshop: WorkshopResult) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(if (workshop.isOpen) "Abierto" else "Cerrado", color = if (workshop.isOpen) Color(0xFF4CAF50) else Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text("${String.format("%.1f", workshop.distanceKm)} km", color = Color.Gray, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Button(
+                        onClick = onRouteClick,
+                        modifier = Modifier.height(28.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16528E)),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text("Ruta", fontSize = 10.sp, color = Color.White)
+                    }
                 }
             }
         }

@@ -120,7 +120,28 @@ class MainActivity : ComponentActivity() {
                             SettingsScreen(
                                 modifier = modifierWithPadding,
                                 onBack = { currentScreen = "home" },
+                                onLogout = { currentScreen = "login" },
+                                onMyAccountClick = { currentScreen = "my_account" },
+                                onMyVehiclesClick = { currentScreen = "my_vehicles" }
+                            )
+                        }
+                        "my_account" -> {
+                            BackHandler { currentScreen = "settings" }
+                            MyAccountScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "settings" },
                                 onLogout = { currentScreen = "login" }
+                            )
+                        }
+                        "my_vehicles" -> {
+                            BackHandler { currentScreen = "settings" }
+                            MyVehiclesScreen(
+                                modifier = modifierWithPadding,
+                                onBack = { currentScreen = "settings" },
+                                onNavigateToDetails = { vehicle ->
+                                    selectedVehicleForDetails = vehicle
+                                    currentScreen = "vehicle_details"
+                                }
                             )
                         }
                         "maintenance" -> {

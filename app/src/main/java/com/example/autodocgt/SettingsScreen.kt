@@ -20,6 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -28,7 +33,9 @@ import com.google.firebase.ktx.Firebase
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onMyAccountClick: () -> Unit = {},
+    onMyVehiclesClick: () -> Unit = {}
 ) {
     val primaryDarkBlue = Color(0xFF16528E)
     val backgroundGray = Color(0xFFE8E8E8)
@@ -38,12 +45,14 @@ fun SettingsScreen(
     
     var userName by remember { mutableStateOf("Usuario") }
     var userEmail by remember { mutableStateOf(currentUser?.email ?: "usuario@gmail.com") }
+    var photoBase64 by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         currentUser?.let { user ->
             db.collection("usuarios").document(user.uid).get()
                 .addOnSuccessListener { document ->
                     userName = document.getString("nombre") ?: user.displayName ?: "Usuario"
+                    photoBase64 = document.getString("foto") ?: ""
                 }
         }
     }
@@ -91,12 +100,32 @@ fun SettingsScreen(
                     .background(Color(0xFFB0BEC5)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier.size(70.dp),
-                    tint = Color.White
-                )
+                if (photoBase64.isNotEmpty()) {
+                    var bitmapMap: android.graphics.Bitmap? = null
+                    try {
+                        val imageBytes = Base64.decode(photoBase64, Base64.DEFAULT)
+                        bitmapMap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    } catch (e: Exception) {
+                        // ignore
+                    }
+                    if (bitmapMap != null) {
+                        Image(
+                            bitmap = bitmapMap.asImageBitmap(),
+                            contentDescription = "Foto de perfil",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(70.dp), tint = Color.White)
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(70.dp),
+                        tint = Color.White
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
@@ -145,9 +174,9 @@ fun SettingsScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                    MenuItem("Mi cuenta >")
+                    MenuItem("Mi cuenta >", onClick = onMyAccountClick)
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
-                    MenuItem("Mi vehiculo >")
+                    MenuItem("Mis vehiculos >", onClick = onMyVehiclesClick)
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                     MenuItem("Exportar reportes >")
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
@@ -202,12 +231,12 @@ fun NotificationSwitch(label: String) {
 }
 
 @Composable
-fun MenuItem(label: String) {
+fun MenuItem(label: String, onClick: (() -> Unit)? = null) {
     Text(
         text = label,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO */ }
+            .clickable { onClick?.invoke() }
             .padding(vertical = 15.dp),
         fontWeight = FontWeight.Bold,
         fontSize = 16.sp,

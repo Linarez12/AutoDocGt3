@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -266,11 +267,12 @@ fun MaintenanceCard(mantenimiento: Map<String, Any>, vehiculoStr: String, onDeta
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
+            Image(
                 painter = painterResource(id = iconRes),
                 contentDescription = "Mantenimiento Icon",
-                tint = if (iconRes == R.drawable.img_settings_inicio) Color(0xFF16528E) else Color.Unspecified,
-                modifier = Modifier.size(60.dp)
+                colorFilter = if (iconRes == R.drawable.img_settings_inicio) androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF16528E)) else null,
+                modifier = Modifier.size(60.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

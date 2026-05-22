@@ -94,9 +94,7 @@ fun AddExpenseScreen(
     val datePickerState = rememberDatePickerState()
 
     // Campos Combustible
-    var litros by remember { mutableStateOf("") }
     var montoCombustible by remember { mutableStateOf("") }
-    var kmCombustible by remember { mutableStateOf("") }
     var gasolinera by remember { mutableStateOf("") }
     var tipoCombustible by remember { mutableStateOf("") }
     var expandedGasolinera by remember { mutableStateOf(false) }
@@ -340,32 +338,9 @@ fun AddExpenseScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = "Litros:", color = Color.Gray, fontSize = 14.sp)
-                                    OutlinedTextField(
-                                        value = litros, onValueChange = { litros = it.filter { c -> c.isDigit() || c == '.' } },
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = textFieldColors,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                }
-                                Column(modifier = Modifier.weight(1f)) {
                                     Text(text = "Monto:", color = Color.Gray, fontSize = 14.sp)
                                     OutlinedTextField(
                                         value = montoCombustible, onValueChange = { montoCombustible = it.filter { c -> c.isDigit() || c == '.' } },
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors = textFieldColors,
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = "KM al cargar:", color = Color.Gray, fontSize = 14.sp)
-                                    OutlinedTextField(
-                                        value = kmCombustible, onValueChange = { kmCombustible = it.filter { c -> c.isDigit() } },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = textFieldColors,
@@ -530,10 +505,8 @@ fun AddExpenseScreen(
                         var isValid = true
                         when (selectedTabIndex) {
                             0 -> {
-                                if (litros.isEmpty() || montoCombustible.isEmpty()) isValid = false
-                                gastoData["litros"] = litros
+                                if (montoCombustible.isEmpty()) isValid = false
                                 gastoData["monto"] = montoCombustible.toDoubleOrNull() ?: 0.0
-                                gastoData["kmAlCargar"] = kmCombustible
                                 gastoData["gasolinera"] = gasolinera
                                 gastoData["tipoCombustible"] = tipoCombustible
                             }

@@ -26,6 +26,12 @@ class ReminderWorker(
 
     override suspend fun doWork(): Result {
         try {
+            val sharedPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val notificationsEnabled = sharedPrefs.getBoolean("notifications_enabled", true)
+            if (!notificationsEnabled) {
+                return Result.success()
+            }
+
             val auth = Firebase.auth
             val currentUser = auth.currentUser ?: return Result.success()
 

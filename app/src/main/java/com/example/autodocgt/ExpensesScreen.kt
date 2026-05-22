@@ -110,7 +110,7 @@ fun ExpensesScreen(
                 onMaintenanceClick = onMaintenanceClick,
                 onDocumentsClick = onDocumentsClick,
                 onRemindersClick = onRemindersClick,
-                onExpensesClick = {} // Ya estamos en gastos
+                onExpensesClick = {}
             )
         }
     ) { innerPadding ->
@@ -123,8 +123,7 @@ fun ExpensesScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            
-            // Tarjeta de la Tabla de Gastos
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,7 +162,7 @@ fun ExpensesScreen(
                                 grandTotal += carTotal
 
                                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                                    Text(text = "Auto no.${index + 1} (${v["placa"]})", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
+                                    Text(text = "Auto no.${index + 1} ", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text("Combustible:", color = Color.DarkGray)

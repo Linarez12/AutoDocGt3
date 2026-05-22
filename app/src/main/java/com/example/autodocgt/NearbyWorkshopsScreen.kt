@@ -90,7 +90,6 @@ fun NearbyWorkshopsScreen(
 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    // Función para buscar talleres
     suspend fun searchWorkshops(query: String, location: LatLng) {
         isLoading = true
         withContext(Dispatchers.IO) {
@@ -101,17 +100,14 @@ fun NearbyWorkshopsScreen(
                 connection.requestMethod = "POST"
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("X-Goog-Api-Key", apiKey)
-                // Solicitamos los campos específicos que necesitamos para que sea rápido y gratuito donde aplique
                 connection.setRequestProperty(
                     "X-Goog-FieldMask", 
                     "places.id,places.displayName.text,places.formattedAddress,places.location,places.rating,places.regularOpeningHours.openNow"
                 )
                 connection.doOutput = true
 
-                // Construimos el cuerpo JSON
                 val jsonBody = JSONObject().apply {
                     put("textQuery", query)
-                    // type car_repair en la API legacy es algo diferente en la nueva, pero includedType lo filtra
                     put("includedType", "car_repair")
                     
                     val centerObj = JSONObject().apply {
@@ -120,7 +116,7 @@ fun NearbyWorkshopsScreen(
                     }
                     val circleObj = JSONObject().apply {
                         put("center", centerObj)
-                        put("radius", 10000.0) // 10 km
+                        put("radius", 10000.0) 
                     }
                     val locationBiasObj = JSONObject().apply {
                         put("circle", circleObj)
@@ -187,20 +183,15 @@ fun NearbyWorkshopsScreen(
         }
     }
 
-    // Obtener ubicación actual al iniciar
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
-            Log.d("WorkshopSearch", "Permiso de ubicación concedido. Buscando ubicación...")
             try {
-                // Usamos lastLocation porque es casi instantáneo. getCurrentLocation puede tardar mucho o colgarse si no hay señal.
                 fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
                     if (location != null) {
-                        Log.d("WorkshopSearch", "Ubicación obtenida: ${location.latitude}, ${location.longitude}")
                         val userLatLng = LatLng(location.latitude, location.longitude)
                         cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
                         scope.launch { searchWorkshops("talleres mecanicos", userLatLng) }
                     } else {
-                        Log.d("WorkshopSearch", "lastLocation es nulo, buscando ubicación actual...")
                         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                             .addOnSuccessListener { currLoc: Location? ->
                                 if (currLoc != null) {
@@ -208,30 +199,25 @@ fun NearbyWorkshopsScreen(
                                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
                                     scope.launch { searchWorkshops("talleres mecanicos", userLatLng) }
                                 } else {
-                                    Log.d("WorkshopSearch", "getCurrentLocation también es nulo. Usando predeterminada.")
                                     scope.launch { searchWorkshops("talleres mecanicos", cameraPositionState.position.target) }
                                 }
                             }
                             .addOnFailureListener {
-                                Log.e("WorkshopSearch", "Fallo al obtener getCurrentLocation", it)
                                 scope.launch { searchWorkshops("talleres mecanicos", cameraPositionState.position.target) }
                             }
                     }
                 }.addOnFailureListener {
-                    Log.e("WorkshopSearch", "Fallo al obtener lastLocation", it)
                     scope.launch { searchWorkshops("talleres mecanicos", cameraPositionState.position.target) }
                 }
             } catch (e: SecurityException) {
                 Log.e("WorkshopSearch", "Error de seguridad al obtener ubicación", e)
             }
         } else {
-            Log.d("WorkshopSearch", "Solicitando permiso de ubicación...")
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
     Column(modifier = modifier.fillMaxSize().background(backgroundGray)) {
-        // Barra Superior
         Row(
             modifier = Modifier.fillMaxWidth().background(primaryDarkBlue).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -247,7 +233,6 @@ fun NearbyWorkshopsScreen(
         }
 
         Column(modifier = Modifier.padding(16.dp)) {
-            // Buscador
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -278,7 +263,6 @@ fun NearbyWorkshopsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Mapa de Google
             Box(modifier = Modifier.fillMaxWidth().height(250.dp).clip(RoundedCornerShape(16.dp))) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
@@ -296,7 +280,6 @@ fun NearbyWorkshopsScreen(
             Text("Talleres encontrados:", color = primaryDarkBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Lista de Tarjetas (Cards)
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = primaryDarkBlue)

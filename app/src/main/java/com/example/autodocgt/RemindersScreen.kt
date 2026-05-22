@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -79,7 +79,7 @@ fun RemindersScreen(
                 onHomeClick = onHomeClick,
                 onMaintenanceClick = onMaintenanceClick,
                 onDocumentsClick = onDocumentsClick,
-                onRemindersClick = {}, // Ya estamos en recordatorios
+                onRemindersClick = {},
                 onExpensesClick = onExpensesClick
             )
         }
@@ -177,9 +177,9 @@ fun ReminderCard(
             val days = TimeUnit.MILLISECONDS.toDays(diff)
             
             when {
-                days < 0 -> Color.Red // Ya llegó o pasó
-                days <= 90 -> Color(0xFFFBC02D) // Amarillo para < 3 meses (aprox 90 días)
-                else -> Color(0xFF4CAF50) // Verde > 3 meses
+                days < 0 -> Color.Red
+                days <= 90 -> Color(0xFFFBC02D)
+                else -> Color(0xFF4CAF50)
             }
         } catch (e: Exception) {
             Color.Black
@@ -203,7 +203,7 @@ fun ReminderCard(
             Icon(
                 painter = painterResource(id = R.drawable.calendario),
                 contentDescription = "Calendario",
-                tint = Color(0xFF16528E),
+                tint = Color.Unspecified,
                 modifier = Modifier.size(60.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))

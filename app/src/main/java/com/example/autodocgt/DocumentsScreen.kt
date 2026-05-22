@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -86,7 +86,7 @@ fun DocumentsScreen(
                 currentRoute = "documents",
                 onHomeClick = onHomeClick,
                 onMaintenanceClick = onMaintenanceClick,
-                onDocumentsClick = {}, // Ya estamos en documentos
+                onDocumentsClick = {},
                 onRemindersClick = onRemindersClick,
                 onExpensesClick = onExpensesClick
             )
@@ -137,7 +137,7 @@ fun DocumentsScreen(
                 }
 
                 vehiculos.forEachIndexed { index, v ->
-                    val carDocs = documentos.filter { it["vehiculoId"] == v["id"] }
+                    val carDocs = documentos.filter { it["vehiculoId"] == v["id"] && it["tipo"] != "Licencia de conducir" }
                     if (carDocs.isNotEmpty()) {
                         item {
                             Text(
@@ -269,7 +269,7 @@ fun DocumentCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp),
+                    .size(90.dp),
                 contentAlignment = Alignment.Center
             ) {
                 val iconRes = when (tipo) {
@@ -284,7 +284,7 @@ fun DocumentCard(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
                     tint = if (iconRes == R.drawable.img_file_plus_inicio) Color(0xFF16528E) else Color.Unspecified,
-                    modifier = Modifier.size(if (iconRes == R.drawable.img_file_plus_inicio) 32.dp else 40.dp)
+                    modifier = Modifier.size(if (iconRes == R.drawable.img_file_plus_inicio) 56.dp else 70.dp)
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))

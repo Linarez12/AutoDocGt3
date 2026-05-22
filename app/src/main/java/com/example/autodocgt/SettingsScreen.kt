@@ -25,9 +25,27 @@ import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import android.content.Context
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import android.os.Environment
+import android.widget.Toast
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import android.Manifest
+import android.app.PendingIntent
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 
 @Composable
 fun SettingsScreen(
@@ -42,6 +60,7 @@ fun SettingsScreen(
     val auth = Firebase.auth
     val db = Firebase.firestore
     val currentUser = auth.currentUser
+    val context = androidx.compose.ui.platform.LocalContext.current
     
     var userName by remember { mutableStateOf("Usuario") }
     var userEmail by remember { mutableStateOf(currentUser?.email ?: "usuario@gmail.com") }
@@ -106,7 +125,6 @@ fun SettingsScreen(
                         val imageBytes = Base64.decode(photoBase64, Base64.DEFAULT)
                         bitmapMap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                     } catch (e: Exception) {
-                        // ignore
                     }
                     if (bitmapMap != null) {
                         Image(
@@ -156,12 +174,9 @@ fun SettingsScreen(
                         fontSize = 18.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
-                    NotificationSwitch("Recordatorios de documentos")
+                    NotificationSwitch("Recordatorios", "notifications_enabled")
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
-                    NotificationSwitch("Alertas de Mantenimiento")
-                    HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
-                    NotificationSwitch("Recordatorios de multas:")
+                    NotificationSwitch("Mostrar icono de campana", "show_bell_icon")
                 }
             }
 
@@ -178,7 +193,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                     MenuItem("Mis vehiculos >", onClick = onMyVehiclesClick)
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
-                    MenuItem("Exportar reportes >")
+                    MenuItem("Exportar reporte de gastos >", onClick = { exportarReportePdf(context, db, auth) })
                     HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                     
                     Text(
@@ -202,8 +217,11 @@ fun SettingsScreen(
 }
 
 @Composable
-fun NotificationSwitch(label: String) {
-    var checked by remember { mutableStateOf(true) }
+fun NotificationSwitch(label: String, prefKey: String = "notifications_enabled", defaultChecked: Boolean = true) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sharedPrefs = remember { context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE) }
+    var checked by remember { mutableStateOf(sharedPrefs.getBoolean(prefKey, defaultChecked)) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -219,7 +237,10 @@ fun NotificationSwitch(label: String) {
         )
         Switch(
             checked = checked,
-            onCheckedChange = { checked = it },
+            onCheckedChange = { 
+                checked = it
+                sharedPrefs.edit().putBoolean(prefKey, it).apply()
+            },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = Color(0xFF16528E),
@@ -248,4 +269,153 @@ fun MenuItem(label: String, onClick: (() -> Unit)? = null) {
 @Composable
 fun SettingsScreenPreview() {
     SettingsScreen()
+}
+
+fun exportarReportePdf(context: Context, db: FirebaseFirestore, auth: FirebaseAuth) {
+    val currentUser = auth.currentUser
+    if (currentUser == null) {
+        Toast.makeText(context, "Inicia sesión primero", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    Toast.makeText(context, "Generando reporte...", Toast.LENGTH_SHORT).show()
+
+    db.collection("vehiculos").whereEqualTo("userId", currentUser.uid).get().addOnSuccessListener { vehiculosSnapshot ->
+        val vehiculos = vehiculosSnapshot.documents.mapNotNull { doc ->
+            val data = doc.data?.toMutableMap()
+            if (data != null) { data["id"] = doc.id; data } else null
+        }
+
+        db.collection("usuarios").document(currentUser.uid).collection("gastos").get().addOnSuccessListener { gastosSnapshot ->
+            val gastosList = gastosSnapshot.documents.mapNotNull { it.data }
+            
+            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val sortedGastos = gastosList.sortedByDescending {
+                val fechaStr = it["fecha"] as? String ?: ""
+                try { formatter.parse(fechaStr)?.time ?: 0L } catch(e: Exception) { 0L }
+            }
+
+            try {
+                val pdfDocument = PdfDocument()
+                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4
+                var page = pdfDocument.startPage(pageInfo)
+                var canvas = page.canvas
+                val paint = Paint()
+
+                var yPosition = 50f
+                paint.textSize = 20f
+                paint.isFakeBoldText = true
+                canvas.drawText("Reporte de Gastos", 50f, yPosition, paint)
+                yPosition += 40f
+
+                paint.textSize = 14f
+                paint.isFakeBoldText = true
+                canvas.drawText("Fecha", 50f, yPosition, paint)
+                canvas.drawText("Vehículo", 150f, yPosition, paint)
+                canvas.drawText("Detalle", 300f, yPosition, paint)
+                canvas.drawText("Monto", 500f, yPosition, paint)
+                yPosition += 20f
+
+                paint.isFakeBoldText = false
+                paint.textSize = 12f
+
+                var total = 0.0
+
+                for (gasto in sortedGastos) {
+                    if (yPosition > 800f) {
+                        pdfDocument.finishPage(page)
+                        page = pdfDocument.startPage(pageInfo)
+                        canvas = page.canvas
+                        yPosition = 50f
+                    }
+
+                    val fecha = gasto["fecha"] as? String ?: ""
+                    val vId = gasto["vehiculoId"] as? String ?: ""
+                    val vIndex = vehiculos.indexOfFirst { it["id"] == vId }
+                    val autoText = if (vIndex >= 0) "Auto no.${vIndex + 1}" else "Otro"
+                    
+                    val cat = gasto["tipoCategoria"] as? String ?: ""
+                    val sub = if (cat == "Mantenimiento") (gasto["tipoServicio"] as? String ?: "") else (gasto["tipoGasto"] as? String ?: cat)
+                    val detalleText = if (cat == "Combustible") "Gasolina" else sub
+                    
+                    val montoNum = (gasto["monto"] as? Number)?.toDouble() ?: 0.0
+                    val monto = "Q%.2f".format(montoNum)
+                    total += montoNum
+
+                    canvas.drawText(fecha, 50f, yPosition, paint)
+                    canvas.drawText(autoText, 150f, yPosition, paint)
+                    val truncDetail = if (detalleText.length > 20) detalleText.substring(0, 20) + "..." else detalleText
+                    canvas.drawText(truncDetail, 300f, yPosition, paint)
+                    canvas.drawText(monto, 500f, yPosition, paint)
+                    
+                    yPosition += 20f
+                }
+
+                yPosition += 20f
+                if (yPosition > 800f) {
+                    pdfDocument.finishPage(page)
+                    page = pdfDocument.startPage(pageInfo)
+                    canvas = page.canvas
+                    yPosition = 50f
+                }
+
+                paint.isFakeBoldText = true
+                paint.textSize = 14f
+                canvas.drawText("TOTAL GLOBAL: Q%.2f".format(total), 300f, yPosition, paint)
+
+                pdfDocument.finishPage(page)
+
+                var file: File? = null
+                try {
+                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    file = File(downloadsDir, "Reporte_Gastos_${System.currentTimeMillis()}.pdf")
+                    pdfDocument.writeTo(FileOutputStream(file))
+                } catch (e: Exception) {
+                    val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    file = File(fallbackDir, "Reporte_Gastos_${System.currentTimeMillis()}.pdf")
+                    pdfDocument.writeTo(FileOutputStream(file))
+                }
+                pdfDocument.close()
+
+                Toast.makeText(context, "PDF guardado en Descargas", Toast.LENGTH_LONG).show()
+                sendExportNotification(context, "Reporte Exportado", "El reporte de gastos ha sido guardado.")
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Error al crear PDF: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }.addOnFailureListener {
+            Toast.makeText(context, "Error al obtener gastos", Toast.LENGTH_SHORT).show()
+        }
+    }.addOnFailureListener {
+        Toast.makeText(context, "Error al obtener vehículos", Toast.LENGTH_SHORT).show()
+    }
+}
+
+fun sendExportNotification(context: Context, title: String, message: String) {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+    }
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+    val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+    val builder = NotificationCompat.Builder(context, "reminders_channel")
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setContentTitle(title)
+        .setContentText(message)
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setContentIntent(pendingIntent)
+        .setAutoCancel(true)
+
+    with(NotificationManagerCompat.from(context)) {
+        try {
+            notify(System.currentTimeMillis().toInt(), builder.build())
+        } catch (e: Exception) {
+            // Permission might be denied
+        }
+    }
 }

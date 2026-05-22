@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -55,7 +55,6 @@ fun DocumentDetailsScreen(
     val nombre = document["nombre"] as? String ?: ""
     val photoBase64 = document["foto"] as? String ?: ""
 
-    // Format registration date. If not saved, fallback to today or a mock date like 06/06/2026.
     val fechaAgregado = document["fecha_agregado"] as? String ?: remember {
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         sdf.format(Date())
@@ -99,7 +98,6 @@ fun DocumentDetailsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Card 1: Imagen del documento
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -148,7 +146,6 @@ fun DocumentDetailsScreen(
                 }
             }
 
-            // Card 2: Informacion
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -195,7 +192,6 @@ fun DocumentDetailsScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Botón Borrar Documento
             Button(
                 onClick = {
                     val currentUser = auth.currentUser

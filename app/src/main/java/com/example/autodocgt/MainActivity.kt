@@ -66,7 +66,6 @@ class MainActivity : ComponentActivity() {
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
                 ) { isGranted ->
-                    // Permiso concedido o denegado
                 }
 
                 LaunchedEffect(Unit) {

@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,7 +59,6 @@ fun MyVehiclesScreen(
             .fillMaxSize()
             .background(backgroundGray)
     ) {
-        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()

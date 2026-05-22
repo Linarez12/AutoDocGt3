@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -145,7 +145,6 @@ fun AddDocumentScreen(
                     val selectedDateMillis = datePickerState.selectedDateMillis
                     if (selectedDateMillis != null) {
                         val calendar = Calendar.getInstance()
-                        // Ajustar para huso horario si se necesita
                         calendar.timeInMillis = selectedDateMillis
                         val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                         expiryDate = format.format(calendar.time)
@@ -183,7 +182,6 @@ fun AddDocumentScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             
-            // Área de escanear documento
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -213,7 +211,6 @@ fun AddDocumentScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Tarjeta de Datos del documento
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -234,7 +231,6 @@ fun AddDocumentScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    // Tipo de documento
                     Text(text = "Tipo de documento:", color = Color.Gray, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -340,7 +336,6 @@ fun AddDocumentScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fecha de vencimiento
                     Text(text = "Fecha de vencimiento:", color = Color.Gray, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -373,7 +368,6 @@ fun AddDocumentScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Nombre
                     Text(text = "Nombre:", color = Color.Gray, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(

@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -65,7 +65,6 @@ fun AddExpenseScreen(
         unfocusedTextColor = Color.Black
     )
 
-    // Vehículos
     var selectedVehicle by remember { mutableStateOf<Map<String, Any>?>(null) }
     var vehicles by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var expandedVehicle by remember { mutableStateOf(false) }
@@ -86,14 +85,12 @@ fun AddExpenseScreen(
         }
     }
 
-    // Compartidos
     var fecha by remember { mutableStateOf("") }
     var photoBase64 by remember { mutableStateOf("") }
     var showPhotoDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    // Campos Combustible
     var montoCombustible by remember { mutableStateOf("") }
     var gasolinera by remember { mutableStateOf("") }
     var tipoCombustible by remember { mutableStateOf("") }
@@ -102,7 +99,6 @@ fun AddExpenseScreen(
     val gasolineraOptions = listOf("Puma", "Shell", "Texaco", "Uno", "Don Arturo", "Otra")
     val tipoCombOptions = listOf("Regular", "Super", "V-Power", "Diesel")
 
-    // Campos Mantenimiento
     var tipoServicio by remember { mutableStateOf("") }
     var expandedServicio by remember { mutableStateOf(false) }
     val servicioOptions = listOf("Cambio de aceite", "Bujias","Frenos","Bateria","Revisión general", "Otro")
@@ -112,7 +108,6 @@ fun AddExpenseScreen(
     var costoTotal by remember { mutableStateOf("") }
     var notas by remember { mutableStateOf("") }
 
-    // Campos Otros
     var montoOtros by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
 
@@ -263,7 +258,6 @@ fun AddExpenseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Escanear Factura
             Button(
                 onClick = { showPhotoDialog = true },
                 modifier = Modifier
@@ -297,7 +291,6 @@ fun AddExpenseScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // SELECCIÓN DE VEHÍCULO (COMÚN)
                     Text(text = "Vehículo:", color = Color.Gray, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -325,7 +318,7 @@ fun AddExpenseScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     when (selectedTabIndex) {
-                        0 -> { // Combustible
+                        0 -> {
                             Text(text = "Fecha:", color = Color.Gray, fontSize = 14.sp)
                             Box {
                                 OutlinedTextField(
@@ -382,7 +375,7 @@ fun AddExpenseScreen(
                                 }
                             }
                         }
-                        1 -> { // Mantenimiento
+                        1 -> {
                             Text(text = "Tipo de servicio:", color = Color.Gray, fontSize = 14.sp)
                             Box {
                                 OutlinedTextField(
@@ -457,7 +450,7 @@ fun AddExpenseScreen(
                                 shape = RoundedCornerShape(8.dp)
                             )
                         }
-                        2 -> { // Otros
+                        2 -> {
                             Text(text = "Fecha:", color = Color.Gray, fontSize = 14.sp)
                             Box {
                                 OutlinedTextField(

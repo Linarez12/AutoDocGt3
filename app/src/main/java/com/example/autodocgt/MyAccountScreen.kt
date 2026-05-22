@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -71,7 +71,6 @@ fun MyAccountScreen(
                     photoBase64 = doc.getString("foto") ?: ""
                 }
             } catch (e: Exception) {
-                // error loading
             }
         }
     }
@@ -141,7 +140,6 @@ fun MyAccountScreen(
             .fillMaxSize()
             .background(backgroundGray)
     ) {
-        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -188,7 +186,6 @@ fun MyAccountScreen(
                         val imageBytes = Base64.decode(photoBase64, Base64.DEFAULT)
                         bitmapMap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                     } catch (e: Exception) {
-                        // ignore
                     }
                     if (bitmapMap != null) {
                         Image(

@@ -71,7 +71,6 @@ fun HomeScreen(
         
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            // Cargar nombre de usuario
             db.collection("usuarios").document(currentUser.uid).get()
                 .addOnSuccessListener { document ->
                     userName = document.getString("nombre") ?: currentUser.displayName ?: "Usuario"
@@ -80,7 +79,6 @@ fun HomeScreen(
                     userName = currentUser.displayName ?: "Usuario"
                 }
                 
-            // Cargar vehículos
             db.collection("vehiculos")
                 .whereEqualTo("userId", currentUser.uid)
                 .get()
@@ -99,7 +97,6 @@ fun HomeScreen(
                     Toast.makeText(context, "Error al cargar vehículos: ${e.message}", Toast.LENGTH_LONG).show()
                 }
 
-            // Verificar recordatorios urgentes (<= 7 días)
             db.collection("usuarios").document(currentUser.uid).collection("documentos")
                 .whereEqualTo("recordatorioActivo", true)
                 .addSnapshotListener { snapshot, _ ->
@@ -165,7 +162,6 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Cabecera
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -204,7 +200,6 @@ fun HomeScreen(
                 }
             }
             
-            // Contenido Central
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -229,7 +224,6 @@ fun HomeScreen(
                         Text("Agregar Vehiculo", color = Color.White)
                     }
                 } else {
-                    // Mostrar lista de vehículos con Pager
                     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { vehicles.size })
                     
                     Column(
@@ -385,7 +379,6 @@ fun HomeScreen(
                 }
             }
 
-            // Botón de Consultar Multas removido a petición del usuario.
         }
     }
 }
@@ -397,6 +390,10 @@ fun HomeTopBar(
     onBellClick: () -> Unit = {},
     hasUrgentReminder: Boolean = false
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sharedPrefs = remember { context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE) }
+    val showBellIcon = sharedPrefs.getBoolean("show_bell_icon", true)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -405,22 +402,26 @@ fun HomeTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Box(modifier = Modifier.clickable { onBellClick() }) {
-            Icon(
-                painter = painterResource(id = R.drawable.img_bell_inicio),
-                contentDescription = "Notificaciones",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
-            if (hasUrgentReminder) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .background(Color.Red, shape = androidx.compose.foundation.shape.CircleShape)
-                        .align(Alignment.TopEnd)
-                        .offset(x = 2.dp, y = (-2).dp)
+        if (showBellIcon) {
+            Box(modifier = Modifier.clickable { onBellClick() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.img_bell_inicio),
+                    contentDescription = "Notificaciones",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
                 )
+                if (hasUrgentReminder) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(Color.Red, shape = androidx.compose.foundation.shape.CircleShape)
+                            .align(Alignment.TopEnd)
+                            .offset(x = 2.dp, y = (-2).dp)
+                    )
+                }
             }
+        } else {
+            Spacer(modifier = Modifier.size(28.dp))
         }
         Text(
             text = "AUTO DOC GT",

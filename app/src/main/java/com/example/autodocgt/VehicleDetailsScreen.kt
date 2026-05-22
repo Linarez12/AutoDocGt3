@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -75,7 +75,6 @@ fun VehicleDetailsScreen(
             .fillMaxSize()
             .background(backgroundGray)
     ) {
-        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,7 +108,7 @@ fun VehicleDetailsScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
-            Spacer(modifier = Modifier.width(28.dp)) // To center title properly
+            Spacer(modifier = Modifier.width(28.dp))
         }
         
         Column(
@@ -119,7 +118,6 @@ fun VehicleDetailsScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Photo Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -127,7 +125,7 @@ fun VehicleDetailsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Auto No.1", // Static for now or can pass index
+                        text = "Auto No.1",
                         color = primaryDarkBlue,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -162,7 +160,6 @@ fun VehicleDetailsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Stats Row
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -184,7 +181,6 @@ fun VehicleDetailsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Informacion
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -214,7 +210,6 @@ fun VehicleDetailsScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly

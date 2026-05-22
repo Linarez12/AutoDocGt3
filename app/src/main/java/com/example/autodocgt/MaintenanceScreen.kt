@@ -1,4 +1,4 @@
-package com.example.autodocgt
+﻿package com.example.autodocgt
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -58,7 +58,6 @@ fun MaintenanceScreen(
     val permissionsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissions ->
-            // Los resultados de los permisos se pueden manejar aquí
         }
     )
 
@@ -119,7 +118,7 @@ fun MaintenanceScreen(
                 backgroundColor = primaryDarkBlue,
                 currentRoute = "maintenance",
                 onHomeClick = onHomeClick,
-                onMaintenanceClick = {}, // Ya estamos en mantenimiento
+                onMaintenanceClick = {},
                 onDocumentsClick = onDocumentsClick,
                 onRemindersClick = onRemindersClick,
                 onExpensesClick = onExpensesClick

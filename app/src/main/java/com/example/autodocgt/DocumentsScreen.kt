@@ -269,15 +269,22 @@ fun DocumentCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .background(Color(0xFFE8E8E8), RoundedCornerShape(8.dp)),
+                    .size(60.dp),
                 contentAlignment = Alignment.Center
             ) {
+                val iconRes = when (tipo) {
+                    "Tarjeta de circulación" -> R.drawable.tarjeta_circulacion
+                    "Calcomanía" -> R.drawable.calcomania
+                    "Seguro" -> R.drawable.seguro
+                    "Licencia de conducir" -> R.drawable.licencia_conducir
+                    "Otro" -> R.drawable.otro
+                    else -> R.drawable.img_file_plus_inicio
+                }
                 Icon(
-                    painter = painterResource(id = R.drawable.img_file_plus_inicio),
+                    painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = Color(0xFF16528E),
-                    modifier = Modifier.size(32.dp)
+                    tint = if (iconRes == R.drawable.img_file_plus_inicio) Color(0xFF16528E) else Color.Unspecified,
+                    modifier = Modifier.size(if (iconRes == R.drawable.img_file_plus_inicio) 32.dp else 40.dp)
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))

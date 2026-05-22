@@ -385,17 +385,7 @@ fun HomeScreen(
                 }
             }
 
-            Button(
-                onClick = {  },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
-            ) {
-                Text("Consultar Multas", color = Color.White, fontSize = 16.sp)
-            }
+            // Botón de Consultar Multas removido a petición del usuario.
         }
     }
 }

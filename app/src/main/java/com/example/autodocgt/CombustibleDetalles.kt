@@ -48,10 +48,8 @@ fun CombustibleDetalles(
 
     val gastoId = gasto["id"] as? String ?: ""
     val fecha = gasto["fecha"] as? String ?: ""
-    val litros = gasto["litros"] as? String ?: ""
     val montoNum = (gasto["monto"] as? Number)?.toDouble() ?: 0.0
     val monto = "%.2f".format(montoNum)
-    val kmAlCargar = gasto["kmAlCargar"] as? String ?: ""
     val gasolinera = gasto["gasolinera"] as? String ?: ""
     val tipoCombustible = gasto["tipoCombustible"] as? String ?: ""
     val photoBase64 = gasto["facturaBase64"] as? String ?: ""
@@ -166,12 +164,6 @@ fun CombustibleDetalles(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
 
                     CombustibleInfoRow(label = "Monto", value = "Q$monto")
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
-
-                    CombustibleInfoRow(label = "Litros", value = litros)
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
-
-                    CombustibleInfoRow(label = "KM al cargar", value = kmAlCargar)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
 
                     CombustibleInfoRow(label = "Gasolinera", value = gasolinera)

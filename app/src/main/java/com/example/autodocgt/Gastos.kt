@@ -119,100 +119,106 @@ fun Gastos(
                 .fillMaxSize()
                 .background(backgroundGray)
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.Top,
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Card(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp)
-                    .shadow(4.dp, RoundedCornerShape(16.dp)),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(16.dp)
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(bottom = 24.dp)
+                        .shadow(4.dp, RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = "Tabla de Gastos",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    
-                    var grandTotal = 0.0
-                    
-                    if (vehiculos.isEmpty()) {
-                        Text("No hay vehículos registrados.", color = Color.Gray)
-                    } else {
-                        vehiculos.forEachIndexed { index, v ->
-                            val carGastos = currentMonthGastos.filter { it["vehiculoId"] == v["id"] }
-                            val sumCombustible = carGastos.filter { it["tipoCategoria"] == "Combustible" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
-                            val sumMantenimiento = carGastos.filter { it["tipoCategoria"] == "Mantenimiento" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
-                            val sumOtros = carGastos.filter { it["tipoCategoria"] == "Otros" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
-                            val carTotal = sumCombustible + sumMantenimiento + sumOtros
-                            
-                            if (carTotal > 0 || carGastos.isNotEmpty()) {
-                                grandTotal += carTotal
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Tabla de Gastos",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        var grandTotal = 0.0
+                        
+                        if (vehiculos.isEmpty()) {
+                            Text("No hay vehículos registrados.", color = Color.Gray)
+                        } else {
+                            vehiculos.forEachIndexed { index, v ->
+                                val carGastos = currentMonthGastos.filter { it["vehiculoId"] == v["id"] }
+                                val sumCombustible = carGastos.filter { it["tipoCategoria"] == "Combustible" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
+                                val sumMantenimiento = carGastos.filter { it["tipoCategoria"] == "Mantenimiento" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
+                                val sumOtros = carGastos.filter { it["tipoCategoria"] == "Otros" }.sumOf { (it["monto"] as? Number)?.toDouble() ?: 0.0 }
+                                val carTotal = sumCombustible + sumMantenimiento + sumOtros
+                                
+                                if (carTotal > 0 || carGastos.isNotEmpty()) {
+                                    grandTotal += carTotal
 
-                                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                                    Text(text = "Auto no.${index + 1} ", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Combustible:", color = Color.DarkGray)
-                                        Text("Q${"%.2f".format(sumCombustible)}", color = Color.DarkGray)
+                                    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                                        Text(text = "Auto no.${index + 1} ", fontWeight = FontWeight.Bold, color = primaryDarkBlue, fontSize = 16.sp)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Combustible:", color = Color.DarkGray)
+                                            Text("Q${"%.2f".format(sumCombustible)}", color = Color.DarkGray)
+                                        }
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Mantenimiento:", color = Color.DarkGray)
+                                            Text("Q${"%.2f".format(sumMantenimiento)}", color = Color.DarkGray)
+                                        }
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Otros:", color = Color.DarkGray)
+                                            Text("Q${"%.2f".format(sumOtros)}", color = Color.DarkGray)
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Total Vehículo:", fontWeight = FontWeight.Bold, color = Color.Black)
+                                            Text("Q${"%.2f".format(carTotal)}", fontWeight = FontWeight.Bold, color = Color.Black)
+                                        }
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
                                     }
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Mantenimiento:", color = Color.DarkGray)
-                                        Text("Q${"%.2f".format(sumMantenimiento)}", color = Color.DarkGray)
-                                    }
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Otros:", color = Color.DarkGray)
-                                        Text("Q${"%.2f".format(sumOtros)}", color = Color.DarkGray)
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Total Vehículo:", fontWeight = FontWeight.Bold, color = Color.Black)
-                                        Text("Q${"%.2f".format(carTotal)}", fontWeight = FontWeight.Bold, color = Color.Black)
-                                    }
-                                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.LightGray)
                                 }
                             }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("TOTAL DEL MES:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryDarkBlue)
-                            Text("Q${"%.2f".format(grandTotal)}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryDarkBlue)
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("TOTAL DEL MES:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryDarkBlue)
+                                Text("Q${"%.2f".format(grandTotal)}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryDarkBlue)
+                            }
                         }
                     }
                 }
-            }
 
-            Button(
-                onClick = { onNavigateToAddExpense() },
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(48.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
-            ) {
-                Text("+ Agregar gasto", color = Color.White, fontSize = 16.sp)
+                Button(
+                    onClick = { onNavigateToAddExpense() },
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)
+                ) {
+                    Text("+ Agregar gasto", color = Color.White, fontSize = 16.sp)
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
             }
-
-            Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = onNavigateToReport,
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .padding(bottom = 16.dp)
+                    .padding(vertical = 16.dp)
                     .height(50.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = primaryDarkBlue)

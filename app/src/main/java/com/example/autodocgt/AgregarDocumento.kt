@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +37,8 @@ import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -144,10 +145,10 @@ fun AgregarDocumento(
                     showDatePicker = false
                     val selectedDateMillis = datePickerState.selectedDateMillis
                     if (selectedDateMillis != null) {
-                        val calendar = Calendar.getInstance()
-                        calendar.timeInMillis = selectedDateMillis
-                        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                        expiryDate = format.format(calendar.time)
+                        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
+                            timeZone = TimeZone.getTimeZone("UTC")
+                        }
+                        expiryDate = format.format(Date(selectedDateMillis))
                     }
                 }) {
                     Text("OK")

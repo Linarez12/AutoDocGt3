@@ -125,7 +125,6 @@ fun Inicio(
                                     val days = TimeUnit.MILLISECONDS.toDays(diff)
                                     if (days <= 7) {
                                         urgent = true
-                                        // Show modal if it's less than or equal to 3 days
                                         if (days <= 3) {
                                             val dId = doc.id
                                             val isDismissed = sharedPrefs.getBoolean("dismissed_doc_$dId", false)

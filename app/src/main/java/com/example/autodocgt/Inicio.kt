@@ -57,6 +57,12 @@ fun Inicio(
     var hasUrgentReminder by remember { mutableStateOf(false) }
     val auth = Firebase.auth
     val db = Firebase.firestore
+    
+    val sharedPrefs = remember { context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE) }
+    var urgentDocId by remember { mutableStateOf("") }
+    var urgentDocName by remember { mutableStateOf("") }
+    var urgentDocDate by remember { mutableStateOf("") }
+    var showUrgentModal by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -119,7 +125,17 @@ fun Inicio(
                                     val days = TimeUnit.MILLISECONDS.toDays(diff)
                                     if (days <= 7) {
                                         urgent = true
-                                        break
+                                        // Show modal if it's less than or equal to 3 days
+                                        if (days <= 3) {
+                                            val dId = doc.id
+                                            val isDismissed = sharedPrefs.getBoolean("dismissed_doc_$dId", false)
+                                            if (!isDismissed && urgentDocId.isEmpty()) {
+                                                urgentDocId = dId
+                                                urgentDocName = doc.getString("nombre") ?: "Documento"
+                                                urgentDocDate = fecha
+                                                showUrgentModal = true
+                                            }
+                                        }
                                     }
                                 }
                             } catch (e: Exception) { }
@@ -154,6 +170,28 @@ fun Inicio(
             )
         }
     ) { innerPadding ->
+        if (showUrgentModal && urgentDocId.isNotEmpty()) {
+            AlertDialog(
+                onDismissRequest = { showUrgentModal = false },
+                title = { Text("¡Documento por vencer!", color = Color.Red, fontWeight = FontWeight.Bold) },
+                text = { Text("Tu documento '${urgentDocName}' está próximo a vencer el día ${urgentDocDate}.\n\nPor favor renuévalo a tiempo para evitar inconvenientes.") },
+                confirmButton = {
+                    TextButton(onClick = { showUrgentModal = false }) {
+                        Text("Cerrar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        sharedPrefs.edit().putBoolean("dismissed_doc_$urgentDocId", true).apply()
+                        showUrgentModal = false
+                        urgentDocId = ""
+                    }) {
+                        Text("No volver a mostrar")
+                    }
+                }
+            )
+        }
+        
         Column(
             modifier = Modifier
                 .fillMaxSize()

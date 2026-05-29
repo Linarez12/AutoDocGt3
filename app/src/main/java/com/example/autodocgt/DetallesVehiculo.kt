@@ -55,6 +55,7 @@ fun DetallesVehiculo(
 
     var documentCount by remember { mutableStateOf(0) }
     var maintenanceCount by remember { mutableStateOf(0) }
+    var vehicleNumber by remember { mutableStateOf(1) }
 
     LaunchedEffect(vehicleId) {
         val auth = Firebase.auth
@@ -79,6 +80,23 @@ fun DetallesVehiculo(
                 .get()
                 .addOnSuccessListener { querySnapshot ->
                     maintenanceCount = querySnapshot.size()
+                }
+
+            db.collection("vehiculos")
+                .whereEqualTo("userId", currentUser.uid)
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    val list = querySnapshot.documents.mapNotNull { doc ->
+                        val data = doc.data?.toMutableMap()
+                        if (data != null) {
+                            data["id"] = doc.id
+                            data
+                        } else null
+                    }.sortedBy { it["fechaCreacion"] as? Long ?: 0L }
+                    val index = list.indexOfFirst { it["id"] == vehicleId }
+                    if (index != -1) {
+                        vehicleNumber = index + 1
+                    }
                 }
         }
     }
@@ -138,7 +156,7 @@ fun DetallesVehiculo(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Auto No.1",
+                        text = "Auto No.$vehicleNumber",
                         color = primaryDarkBlue,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold

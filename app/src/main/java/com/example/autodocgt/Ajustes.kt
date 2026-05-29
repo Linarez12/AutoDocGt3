@@ -286,7 +286,7 @@ fun exportarReportePdf(context: Context, db: FirebaseFirestore, auth: FirebaseAu
         val vehiculos = vehiculosSnapshot.documents.mapNotNull { doc ->
             val data = doc.data?.toMutableMap()
             if (data != null) { data["id"] = doc.id; data } else null
-        }
+        }.sortedBy { it["fechaCreacion"] as? Long ?: 0L }
 
         db.collection("usuarios").document(currentUser.uid).collection("gastos").get().addOnSuccessListener { gastosSnapshot ->
             val gastosList = gastosSnapshot.documents.mapNotNull { doc ->

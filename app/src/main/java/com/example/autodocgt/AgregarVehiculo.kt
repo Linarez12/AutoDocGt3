@@ -450,7 +450,8 @@ fun AgregarVehiculo(
                             "color" to colorVehiculo,
                             "combustible" to combustible,
                             "kilometraje" to if (kilometraje.isNotEmpty()) "$kilometraje KM" else "",
-                            "foto" to photoBase64
+                            "foto" to photoBase64,
+                            "fechaCreacion" to System.currentTimeMillis()
                         )
                         db.collection("vehiculos").add(vehiculoData)
                             .addOnSuccessListener {

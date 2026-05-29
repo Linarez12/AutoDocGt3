@@ -45,7 +45,7 @@ fun MisVehiculos(
                             data["id"] = doc.id
                             data
                         } else null
-                    }
+                    }.sortedBy { it["fechaCreacion"] as? Long ?: 0L }
                 }
         }
     }

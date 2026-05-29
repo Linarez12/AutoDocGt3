@@ -79,6 +79,7 @@ fun AgregarDocumento(
                         data["id"] = doc.id
                         list.add(data)
                     }
+                    list.sortBy { it["fechaCreacion"] as? Long ?: 0L }
                     vehicles = list
                 }
         }
